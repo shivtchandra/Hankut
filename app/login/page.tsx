@@ -1,45 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 export default function AdminLogin() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function login() {
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setMsg("");
+    setLoading(true);
+
     const supabase = createSupabaseBrowser();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/admin`,
-      },
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
     });
 
-    if (error) setMsg(error.message);
+    setLoading(false);
+
+    if (error) {
+      setMsg(error.message);
+      return;
+    }
+
+    if (!data.session) {
+      setMsg("Could not create a session. Check Supabase Auth settings.");
+      return;
+    }
+
+    router.replace("/admin");
+    router.refresh();
   }
 
   return (
-    <main className="shell">
-      <div className="eyebrow">STUDIO ACCESS</div>
-      <h1
-        style={{
-          fontSize: "clamp(48px, 10vw, 88px)",
-          letterSpacing: "-0.06em",
-          margin: "18px 0",
-        }}
-      >
-        콘텐츠 스튜디오
-      </h1>
-      <p className="hero-copy" style={{ marginBottom: 28 }}>
-        Google로 로그인한 뒤, allowlist에 등록된 계정만 /admin에 들어갑니다.
-      </p>
-      <button className="primary" type="button" onClick={login}>
-        Google로 로그인
-      </button>
-      {msg && <p className="danger">{msg}</p>}
-      <p style={{ marginTop: 28 }}>
-        <a href="/">← 사이트로</a>
-      </p>
+    <main className="login-page">
+      <div className="login-card">
+        <p className="login-eyebrow">Studio access</p>
+        <h1 className="login-title">Content Studio</h1>
+        <p className="login-copy">
+          Sign in with email and password. Your email must be in{" "}
+          <code>ADMIN_EMAILS</code>.
+        </p>
+
+        <form className="login-form" onSubmit={onSubmit}>
+          <label className="login-field">
+            <span>Email</span>
+            <input
+              type="email"
+              autoComplete="username"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+            />
+          </label>
+
+          <label className="login-field">
+            <span>Password</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </label>
+
+          <button className="primary-btn login-submit" type="submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        {msg ? <p className="danger login-error">{msg}</p> : null}
+
+        <p className="login-back">
+          <a href="/">← Back to site</a>
+        </p>
+      </div>
     </main>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useRef, useState } from "react";
 import type { ConnectionGroup, ConnectionItem, ConnectionsPayload } from "@/types/game";
 
@@ -9,7 +10,9 @@ type Props = {
   onFail?: () => void;
 };
 
-export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
+export function ConnectionsGameView({
+  const { locale, t } = useLocale();
+ payload, onSolve, onFail }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [solvedGroups, setSolvedGroups] = useState<ConnectionGroup[]>([]);
   const [mistakesRemaining, setMistakesRemaining] = useState<number>(4);
@@ -92,10 +95,10 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
   return (
     <div className="game-shell connections-shell">
       <div className="connections-header">
-        <span className="eyebrow">오늘의 연결고리</span>
-        <h2>16개의 단어를 4개씩 4그룹으로 묶어보세요</h2>
+        <span className="eyebrow">{t("connectionsTitle")}</span>
+        <h2>{t("connectionsPrompt")}</h2>
         <div className="mistakes-dots">
-          <span>기회: </span>
+          <span>{t("chances")}: </span>
           {[...Array(4)].map((_, i) => (
             <span
               key={i}
@@ -139,7 +142,7 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
           onClick={shuffleCurrent}
           disabled={isFinished}
         >
-          섞기
+          {t("shuffle")}
         </button>
         <button
           type="button"
@@ -147,7 +150,7 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
           onClick={() => setSelectedIds([])}
           disabled={selectedIds.length === 0 || isFinished}
         >
-          선택 해제
+          {t("deselect")}
         </button>
         <button
           type="button"
@@ -155,13 +158,13 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
           onClick={submitSelection}
           disabled={selectedIds.length !== 4 || isFinished}
         >
-          제출 ({selectedIds.length}/4)
+          {t("submit")} ({selectedIds.length}/4)
         </button>
       </div>
 
       {isFinished && solvedGroups.length < 4 && (
         <div className="result-card">
-          <span className="eyebrow">정답 공개</span>
+          <span className="eyebrow">{t("answerReveal")}</span>
           {payload.groups.map((g) => (
             <div key={g.id} style={{ marginBottom: "12px" }}>
               <strong style={{ display: "block", color: "var(--accent-red)" }}>{g.label}</strong>

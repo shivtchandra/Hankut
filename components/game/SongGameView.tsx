@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { matchesAlias } from "@/lib/game/normalization";
 import type { SongPayload } from "@/types/game";
@@ -10,7 +11,9 @@ type Props = {
   onFail?: () => void;
 };
 
-export function SongGameView({ payload, onSolve, onFail }: Props) {
+export function SongGameView({
+  const { locale, t } = useLocale();
+ payload, onSolve, onFail }: Props) {
   const segments = payload.segments || [1, 2, 4, 7, 12];
   const [level, setLevel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,7 +55,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
     if (isCorrect) {
       setSolved(true);
-      setNotice("정답입니다! 🎵");
+      setNotice(`${t("correct")} 🎵`);
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
@@ -77,7 +80,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
     <div className="game-shell">
       <div className="audio-hero-wrap">
         <div className={`audio-card ${isPlaying ? "playing" : ""}`}>
-          <div className="audio-badge">오늘의 노래</div>
+          <div className="audio-badge">{t("todaySong")}</div>
 
           <div className="waveform-display">
             {[...Array(16)].map((_, i) => (
@@ -99,7 +102,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
               onClick={playSegment}
               disabled={isPlaying}
             >
-              {isPlaying ? "재생 중..." : `▶ ${currentDuration}초 듣기`}
+              {isPlaying ? t("playing") : `▶ ${t("listenSeconds").replace("{n}", String(currentDuration))}`}
             </button>
           </div>
 
@@ -118,8 +121,8 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">오늘의 노래</span>
-          <h2>이 노래의 제목이나 가수를 맞혀보세요</h2>
+          <span className="eyebrow">{t("todaySong")}</span>
+          <h2>{t("whatSong")}</h2>
         </div>
 
         <div className="search-wrap">
@@ -127,11 +130,11 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitGuess()}
-            placeholder="노래 제목 또는 가수 이름을 입력하세요"
+            placeholder={t("songPlaceholder")}
             disabled={finished}
           />
           <button type="button" onClick={submitGuess} disabled={!guess.trim() || finished}>
-            제출
+            {t("submit")}
           </button>
         </div>
 
@@ -150,7 +153,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
                 onClick={() => useClue(clue.id)}
               >
                 <span>{clue.label}</span>
-                <strong>{used ? clue.value : unlocked ? "힌트 열기" : "잠김"}</strong>
+                <strong>{used ? clue.value : unlocked ? t("reveal") : t("locked")}</strong>
               </button>
             );
           })}
@@ -158,7 +161,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
         {finished && (
           <div className="result-card">
-            <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
+            <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
             <h3>{payload.titleKr}</h3>
             <p>{payload.artistKr} {payload.dramaTitle ? `(${payload.dramaTitle})` : ""}</p>
           </div>

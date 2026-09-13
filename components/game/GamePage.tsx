@@ -44,7 +44,7 @@ export function GamePage({ game, dramas, source, dateLabel }: Props) {
           </div>
 
           <nav className="topnav">
-            <a href="/dramas">드라마 탐색</a>
+            <a href="/dramas">{t("navDramas")}</a>
             <a href="/archive">{t("navArchive")}</a>
             <a href="/leaderboard">{t("navLeaderboard")}</a>
             <a href="/profile">{t("navProfile")}</a>
@@ -60,23 +60,21 @@ export function GamePage({ game, dramas, source, dateLabel }: Props) {
               className={`mode-tab ${activeTab === "scene" ? "active" : ""}`}
               onClick={() => setActiveTab("scene")}
             >
-              🎬 오늘의 장면
+              🎬 {t("todayScene")}
             </button>
             <button
               type="button"
               className={`mode-tab ${activeTab === "todaysFive" ? "active" : ""}`}
               onClick={() => setActiveTab("todaysFive")}
             >
-              🔥 오늘의 5 (종합 덕력)
+              🔥 {t("todaysFive")}
             </button>
           </div>
           <span className="date-chip">{dateLabel}</span>
         </div>
 
         <p className="play-tagline">
-          {activeTab === "scene"
-            ? "한 장면만 보고 드라마를 맞혀보세요."
-            : "장면, 노래, 초성, 연결고리, 인물 5가지 퍼즐을 잇달아 풀고 오늘의 덕력을 측정하세요."}
+          {activeTab === "scene" ? t("taglineScene") : t("taglineFive")}
         </p>
 
         {process.env.NODE_ENV === "development" && source === "demo" ? (
@@ -94,7 +92,7 @@ export function GamePage({ game, dramas, source, dateLabel }: Props) {
 
       <footer className="site-footer">
         <span>{t("everyDay")}</span>
-        <span>{t("brandName")} · 대한민국 1위 한국 문화 인지 게임</span>
+        <span>{t("brandName")} · {t("footerLine")}</span>
       </footer>
     </main>
   );

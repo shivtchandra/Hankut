@@ -120,7 +120,7 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
       <div className="guess-panel">
         <div className="guess-heading">
           <span className="eyebrow">{t("yourGuess")}</span>
-          <h2>어떤 드라마일까요?</h2>
+          <h2>{t("whatDrama")}</h2>
         </div>
 
         <div className={`search-wrap ${shake ? "search-shake" : ""}`}>

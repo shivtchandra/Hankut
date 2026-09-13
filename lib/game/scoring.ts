@@ -130,7 +130,7 @@ export function calculateTodaysDeokryeok({
   return {
     totalScore,
     maxScore,
-    percentileText: `상위 ${percentile}%`,
+    percentileText: locale === "ko" ? `상위 ${percentile}%` : `Top ${percentile}%`,
     streakDays,
     categoryBreakdown,
   };

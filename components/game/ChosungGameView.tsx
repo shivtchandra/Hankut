@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useRef, useState } from "react";
 import { matchesAlias, matchesChosung } from "@/lib/game/normalization";
 import type { ChosungPayload } from "@/types/game";
@@ -10,7 +11,9 @@ type Props = {
   onFail?: () => void;
 };
 
-export function ChosungGameView({ payload, onSolve, onFail }: Props) {
+export function ChosungGameView({
+  const { locale, t } = useLocale();
+ payload, onSolve, onFail }: Props) {
   const [guess, setGuess] = useState("");
   const [attempts, setAttempts] = useState<string[]>([]);
   const [solved, setSolved] = useState(false);
@@ -35,7 +38,7 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
 
     if (isCorrect) {
       setSolved(true);
-      setNotice("정답입니다! 🔤");
+      setNotice(`${t("correct")} 🔤`);
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
@@ -59,20 +62,20 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
     <div className="game-shell">
       <div className="chosung-hero-wrap">
         <div className="chosung-card">
-          <div className="audio-badge">초성 맞히기</div>
+          <div className="audio-badge">{t("chosungTitle")}</div>
           <div className="chosung-display">{payload.chosung}</div>
           <div className="chosung-meta">
             <span>{payload.category}</span>
             <span>·</span>
-            <span>{payload.syllableCount}글자</span>
+            <span>{t("syllableCount").replace("{n}", String(payload.syllableCount))}</span>
           </div>
         </div>
       </div>
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">초성 맞히기</span>
-          <h2>초성을 보고 원래 제목을 맞혀보세요</h2>
+          <span className="eyebrow">{t("chosungTitle")}</span>
+          <h2>{t("whatChosung")}</h2>
         </div>
 
         <div className="search-wrap">
@@ -80,11 +83,11 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitGuess()}
-            placeholder="전체 제목을 한글로 입력하세요"
+            placeholder={t("chosungPlaceholder")}
             disabled={finished}
           />
           <button type="button" onClick={submitGuess} disabled={!guess.trim() || finished}>
-            제출
+            {t("submit")}
           </button>
         </div>
 
@@ -103,7 +106,7 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
                 onClick={() => useClue(clue.id)}
               >
                 <span>{clue.label}</span>
-                <strong>{used ? clue.value : unlocked ? "힌트 열기" : "잠김"}</strong>
+                <strong>{used ? clue.value : unlocked ? t("reveal") : t("locked")}</strong>
               </button>
             );
           })}
@@ -111,7 +114,7 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
 
         {finished && (
           <div className="result-card">
-            <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
+            <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
             <h3>{payload.answerKr}</h3>
             <p>{payload.answerEn}</p>
           </div>

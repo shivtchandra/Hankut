@@ -10,6 +10,8 @@ import { EditorialShareCard } from "@/components/sharing/EditorialShareCard";
 import { calculateTodaysDeokryeok } from "@/lib/game/scoring";
 import { getStreak, recordDailyPlay } from "@/lib/game/streak";
 import type { Drama, TodaysFiveGame } from "@/types/game";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { puzzleTypeLabel } from "@/lib/i18n/dictionary";
 
 type Props = {
   todaysFive: TodaysFiveGame;
@@ -17,6 +19,7 @@ type Props = {
 };
 
 export function TodaysFiveView({ todaysFive, dramas }: Props) {
+  const { locale, t } = useLocale();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [scores, setScores] = useState<{ type: string; score: number }[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -53,6 +56,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
     const deokryeok = calculateTodaysDeokryeok({
       gameScores: finalScores,
       streakDays: streak,
+      locale,
     });
     setFinalResult(deokryeok);
     setIsCompleted(true);
@@ -62,7 +66,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
     return (
       <div className="todays-five-complete">
         <div className="deokryeok-hero-header">
-          <span className="eyebrow">오늘의 덕력 결과</span>
+          <span className="eyebrow">{t("deokryeokResult")}</span>
           <h2>{finalResult.totalScore} / {finalResult.maxScore}</h2>
           <div className="percentile-badge">{finalResult.percentileText}</div>
         </div>
@@ -98,7 +102,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
                 className={`t5-step ${active ? "active" : ""} ${done ? "done" : ""}`}
               >
                 <span>0{idx + 1}</span>
-                <small>{item.type === "scene" ? "장면" : item.type === "song" ? "노래" : item.type === "chosung" ? "초성" : item.type === "connections" ? "연결고리" : "누구지"}</small>
+                <small>{puzzleTypeLabel(item.type, locale)}</small>
               </div>
             );
           })}
