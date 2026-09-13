@@ -10,9 +10,8 @@ type Props = {
   onFail?: () => void;
 };
 
-export function ConnectionsGameView({
-  const { locale, t } = useLocale();
- payload, onSolve, onFail }: Props) {
+export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
+  const { t } = useLocale();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [solvedGroups, setSolvedGroups] = useState<ConnectionGroup[]>([]);
   const [mistakesRemaining, setMistakesRemaining] = useState<number>(4);

@@ -11,9 +11,8 @@ type Props = {
   onFail?: () => void;
 };
 
-export function ChosungGameView({
-  const { locale, t } = useLocale();
- payload, onSolve, onFail }: Props) {
+export function ChosungGameView({ payload, onSolve, onFail }: Props) {
+  const { t } = useLocale();
   const [guess, setGuess] = useState("");
   const [attempts, setAttempts] = useState<string[]>([]);
   const [solved, setSolved] = useState(false);

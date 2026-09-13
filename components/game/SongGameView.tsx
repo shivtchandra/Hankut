@@ -11,9 +11,8 @@ type Props = {
   onFail?: () => void;
 };
 
-export function SongGameView({
-  const { locale, t } = useLocale();
- payload, onSolve, onFail }: Props) {
+export function SongGameView({ payload, onSolve, onFail }: Props) {
+  const { t } = useLocale();
   const segments = payload.segments || [1, 2, 4, 7, 12];
   const [level, setLevel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);

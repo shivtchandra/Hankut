@@ -11,9 +11,8 @@ type Props = {
   onFail?: () => void;
 };
 
-export function PeopleGameView({
-  const { locale, t } = useLocale();
- payload, onSolve, onFail }: Props) {
+export function PeopleGameView({ payload, onSolve, onFail }: Props) {
+  const { t } = useLocale();
   const frames = payload.frames;
   const [frame, setFrame] = useState(0);
   const [guess, setGuess] = useState("");

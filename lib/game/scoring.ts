@@ -91,9 +91,11 @@ export type TodaysDeokryeokResult = {
 export function calculateTodaysDeokryeok({
   gameScores, // array of 5 scores (0-5 each)
   streakDays = 1,
+  locale = "en",
 }: {
   gameScores: { type: string; score: number }[];
   streakDays?: number;
+  locale?: "en" | "ko";
 }): TodaysDeokryeokResult {
   const totalScore = gameScores.reduce((acc, g) => acc + Math.min(5, Math.max(0, g.score)), 0);
   const maxScore = 25;
@@ -110,11 +112,11 @@ export function calculateTodaysDeokryeok({
   else percentile = 85;
 
   const categoryIcons: Record<string, { icon: string; label: string }> = {
-    scene: { icon: "🎬", label: "장면" },
-    song: { icon: "🎵", label: "노래" },
-    chosung: { icon: "🔤", label: "초성" },
-    connections: { icon: "🧩", label: "연결고리" },
-    people: { icon: "👤", label: "누구지" },
+    scene: { icon: "🎬", label: locale === "ko" ? "장면" : "Scene" },
+    song: { icon: "🎵", label: locale === "ko" ? "노래" : "Song" },
+    chosung: { icon: "🔤", label: locale === "ko" ? "초성" : "Chosung" },
+    connections: { icon: "🧩", label: locale === "ko" ? "연결고리" : "Connections" },
+    people: { icon: "👤", label: locale === "ko" ? "누구지" : "Who?" },
   };
 
   const categoryBreakdown = gameScores.map((g) => {
