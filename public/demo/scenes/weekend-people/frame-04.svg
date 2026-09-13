@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img">
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7ea0b4"/>
+      <stop offset=".45" stop-color="#3d5c6e"/>
+      <stop offset="1" stop-color="#1c2a32"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cbb89a"/>
+      <stop offset="1" stop-color="#8d7a5f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sea)"/>
+  <ellipse cx="1280" cy="180" rx="90" ry="90" fill="#f2e6c9" opacity=".55"/>
+  <path d="M0 620 C320 560 640 700 980 640 S1400 580 1600 650 L1600 1000 L0 1000 Z" fill="url(#sand)"/>
+  <path d="M0 600 C300 640 600 560 900 610 S1300 680 1600 600" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="6"/>
+  <path d="M240 720 L280 520 L320 720 Z" fill="#2a241c" opacity=".55"/>
+  <circle cx="280" cy="500" r="18" fill="#1a1612" opacity=".7"/>
+  <text x="120" y="170" fill="#fff" opacity=".28" font-family="Georgia, serif" font-size="42">04</text>
+</svg>

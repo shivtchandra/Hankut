@@ -1,0 +1,84 @@
+"use client";
+
+import { useState } from "react";
+
+export function ContentHealthDashboard() {
+  const [issues, setIssues] = useState([
+    { id: "1", type: "missing_frames", severity: "high", entity: "폭싹 속았수다 #scene-002", description: "프레임이 3개만 등록됨 (5개 필요)" },
+    { id: "2", type: "missing_clues", severity: "medium", entity: "태연 - 그대라는 시 #song-001", description: "힌트가 1개만 구성됨" },
+    { id: "3", type: "rights_review", severity: "high", entity: "나의 해방일지 #scene-004", description: "저작권 검토 필요 (Review Required)" },
+    { id: "4", type: "missing_alias", severity: "low", entity: "우리들의 블루스 #chosung-003", description: "영문 별칭 미설정" },
+  ]);
+
+  const healthScore = Math.max(0, 100 - issues.length * 8);
+
+  function resolveIssue(id: string) {
+    setIssues(issues.filter((i) => i.id !== id));
+  }
+
+  return (
+    <div className="admin-health-dashboard">
+      <div className="admin-title">
+        <div>
+          <span className="eyebrow">QUALITY ASSURANCE</span>
+          <h1>콘텐츠 헬스 체크 & 저작권 검토</h1>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "24px", marginTop: "20px" }}>
+        <div className="health-score-card" style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e7e5e4", textAlign: "center" }}>
+          <span style={{ fontSize: "14px", color: "#666" }}>건강도 지수 (CONTENT HEALTH)</span>
+          <div style={{ fontSize: "56px", fontWeight: "bold", color: healthScore >= 80 ? "#059669" : "#dc2626", margin: "12px 0" }}>
+            {healthScore} <span style={{ fontSize: "20px", color: "#999" }}>/ 100</span>
+          </div>
+          <p style={{ fontSize: "13px", color: "#666" }}>
+            {healthScore >= 80 ? "퍼즐 및 엔티티가 양호한 상태입니다." : "개선이 필요한 이슈가 존재합니다."}
+          </p>
+        </div>
+
+        <div className="issues-list-card" style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e7e5e4" }}>
+          <h3>감지된 이슈 ({issues.length}건)</h3>
+          {issues.length === 0 ? (
+            <p style={{ color: "#059669", fontWeight: "bold" }}>🎉 감지된 문제점이 없습니다. 모든 콘텐츠가 정상입니다!</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
+              {issues.map((issue) => (
+                <div
+                  key={issue.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 18px",
+                    borderRadius: "8px",
+                    background: issue.severity === "high" ? "#fff5f5" : "#fffbe6",
+                    border: `1px solid ${issue.severity === "high" ? "#fca5a5" : "#ffe58f"}`,
+                  }}
+                >
+                  <div>
+                    <strong style={{ display: "block", fontSize: "15px" }}>{issue.entity}</strong>
+                    <span style={{ fontSize: "13px", color: "#666" }}>{issue.description}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => resolveIssue(issue.id)}
+                    style={{
+                      padding: "6px 14px",
+                      background: "#1c1917",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    해결 조치
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

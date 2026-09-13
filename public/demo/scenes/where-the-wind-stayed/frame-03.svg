@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2430"/>
+      <stop offset="1" stop-color="#0a0c10"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#night)"/>
+  <rect x="0" y="620" width="1600" height="380" fill="#0a0b0e"/>
+  <rect x="220" y="180" width="180" height="440" fill="#151820"/>
+  <rect x="460" y="120" width="240" height="500" fill="#12151c"/>
+  <rect x="760" y="200" width="200" height="420" fill="#171b24"/>
+  <rect x="1040" y="90" width="280" height="530" fill="#10131a"/>
+  <rect x="500" y="260" width="80" height="18" fill="#b43b2f" opacity=".75"/>
+  <rect x="1100" y="300" width="120" height="22" fill="#c4a574" opacity=".55"/>
+  <ellipse cx="820" cy="780" rx="260" ry="28" fill="#fff" opacity=".04"/>
+  <g opacity=".25" stroke="#9ab" stroke-width="2">
+    <line x1="200" y1="100" x2="160" y2="900"/><line x1="400" y1="80" x2="340" y2="920"/>
+    <line x1="700" y1="60" x2="660" y2="940"/><line x1="1100" y1="70" x2="1040" y2="930"/>
+  </g>
+  <text x="120" y="170" fill="#fff" opacity=".22" font-family="Georgia, serif" font-size="42">03</text>
+</svg>
