@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { WebAppJsonLd } from "@/components/seo/JsonLd";
+import { Analytics } from "@vercel/analytics/next";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dramacut.com";
 
@@ -84,6 +85,7 @@ export default function RootLayout({
       </head>
       <body>
         <LocaleProvider>{children}</LocaleProvider>
+        <Analytics />
       </body>
     </html>
   );
