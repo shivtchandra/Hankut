@@ -44,35 +44,7 @@ export function SideContentPanel({ dramas }: Props) {
         </p>
       </div>
 
-      {/* Widget 2: Quick Leaderboard Banner */}
-      <div className="side-widget leaderboard-side-card">
-        <div className="widget-header">
-          <span className="widget-tag">COMMUNITY</span>
-          <h3>Top Players Today</h3>
-        </div>
-        <div className="mini-lb-list">
-          <div className="mini-lb-item">
-            <span className="mini-lb-rank rank-1">1</span>
-            <span className="mini-lb-name">K-Fanatic_99</span>
-            <span className="mini-lb-pts">25 pts</span>
-          </div>
-          <div className="mini-lb-item">
-            <span className="mini-lb-rank rank-2">2</span>
-            <span className="mini-lb-name">SeoulDrifter</span>
-            <span className="mini-lb-pts">25 pts</span>
-          </div>
-          <div className="mini-lb-item">
-            <span className="mini-lb-rank rank-3">3</span>
-            <span className="mini-lb-name">ChosungMaster</span>
-            <span className="mini-lb-pts">20 pts</span>
-          </div>
-        </div>
-        <Link href="/leaderboard" className="side-widget-link">
-          View Full Leaderboard <IconChevronRight size={14} />
-        </Link>
-      </div>
-
-      {/* Widget 3: Featured Dramas */}
+      {/* Widget 2: Featured Dramas */}
       <div className="side-widget dramas-side-card">
         <div className="widget-header">
           <span className="widget-tag">FEATURED ARCHIVE</span>
