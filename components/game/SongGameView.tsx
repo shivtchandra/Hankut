@@ -32,7 +32,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
       audioRef.current = new Audio(payload.audioUrl);
     }
     const audio = audioRef.current;
-    audio.currentTime = 0;
+    audio.currentTime = payload.startSeconds ?? 0;
     audio.play().catch(() => {});
     setIsPlaying(true);
 
