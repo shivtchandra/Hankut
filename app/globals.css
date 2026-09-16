@@ -148,6 +148,228 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
 }
 
+/* ---------- LANDING HERO & GUIDE STYLES ---------- */
+
+.daily-edition-badge {
+  background: #DC2626;
+  color: #FFFFFF;
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.game-headline-sub .sub-kr {
+  color: var(--muted);
+  font-family: "Noto Serif KR", serif;
+  font-size: 14px;
+}
+
+.landing-guide-wrapper {
+  margin: 16px 0 28px;
+}
+
+.guide-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--line);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.guide-toggle-btn:hover {
+  background: #FFFFFF;
+  border-color: #DC2626;
+}
+
+.guide-toggle-arrow {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 4px;
+  font-family: "DM Mono", monospace;
+}
+
+.landing-guide-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@media (max-width: 768px) {
+  .landing-guide-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.guide-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.02);
+}
+
+.guide-card-num {
+  font-family: "DM Mono", monospace;
+  font-size: 16px;
+  font-weight: 800;
+  color: #DC2626;
+  background: #FEF2F2;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.guide-card-content h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.guide-card-content p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ---------- ARCHIVE TEASER SECTION ---------- */
+
+.archive-teaser-wrapper {
+  margin-top: 60px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.section-title-row h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 4px 0 0;
+}
+
+.view-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #DC2626;
+  text-decoration: none;
+}
+
+.recent-cuts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .recent-cuts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.recent-cut-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(28, 25, 23, 0.03);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.recent-cut-card:hover {
+  transform: translateY(-2px);
+  border-color: #DC2626;
+}
+
+.recent-cut-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cut-badge {
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #DC2626;
+  background: #FEF2F2;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.cut-date {
+  font-family: "DM Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cut-title-en {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 4px 0 0;
+}
+
+.cut-title-kr {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.recent-cut-footer {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.solved-rate {
+  font-size: 12px;
+  font-family: "DM Mono", monospace;
+  color: var(--muted);
+}
+
+.play-cut-btn {
+  font-size: 13px;
+  font-weight: 700;
+  color: #DC2626;
+  text-decoration: none;
+}
+
 /* ---------- WIDE DESKTOP LAYOUT & SIDE PANEL ---------- */
 
 .wide-desktop-layout {

@@ -6,6 +6,7 @@ import { TodaysFiveView } from "@/components/game/TodaysFiveView";
 import { SideContentPanel } from "@/components/game/SideContentPanel";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { LandingGuideSection, ArchiveTeaserSection } from "@/components/landing/LandingSections";
 
 import type { Drama, TodayGame, TodaysFiveGame } from "@/types/game";
 
@@ -25,8 +26,10 @@ export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props)
       <SiteNav />
 
       <section className="play-stage">
+        {/* Landing Hero Section */}
         <div className="game-intro">
           <div className="daily-meta-line">
+            <span className="daily-edition-badge">DAILY EDITION #248</span>
             <span className="daily-date">{dateLabel}</span>
             <div className="mode-switch">
               <button
@@ -52,11 +55,17 @@ export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props)
               <h1 className="game-headline-kr">
                 This scene—<br />where&apos;s it from?
               </h1>
-              <p className="game-headline-sub">One cut. Guess the K-drama.</p>
+              <p className="game-headline-sub">
+                One cinematic cut. Guess the K-drama in 5 attempts with daily clues.
+                <span className="sub-kr"> · 한 컷만 보고 드라마를 맞혀보세요.</span>
+              </p>
             </>
           )}
+
+          <LandingGuideSection />
         </div>
 
+        {/* Main Game Stage + Desktop Sidebar */}
         <div className="wide-desktop-layout">
           <div className="main-game-column">
             {activeTab === "scene" ? (
@@ -73,6 +82,9 @@ export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props)
 
           <SideContentPanel dramas={dramas} />
         </div>
+
+        {/* Archive Teaser Section below game */}
+        <ArchiveTeaserSection />
       </section>
 
       <SiteFooter />
