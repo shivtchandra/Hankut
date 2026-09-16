@@ -61,7 +61,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .topbar, .site-header-inner {
-  width: min(1280px, calc(100% - 40px));
+  width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
   padding: 20px 0;
   display: flex;
@@ -142,10 +142,229 @@ a { color: inherit; text-decoration: none; }
 }
 
 .play-stage {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
   padding: 24px 0 56px;
   flex: 1;
+}
+
+/* ---------- WIDE DESKTOP LAYOUT & SIDE PANEL ---------- */
+
+.wide-desktop-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 36px;
+}
+
+@media (min-width: 1280px) {
+  .wide-desktop-layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.main-game-column {
+  min-width: 0;
+}
+
+.desktop-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 1279px) {
+  .desktop-side-panel {
+    display: none;
+  }
+}
+
+.side-widget {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(28, 25, 23, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.widget-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.widget-tag {
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #DC2626;
+  text-transform: uppercase;
+}
+
+.widget-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.side-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.side-stat-card {
+  background: #FDFBF7;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.side-stat-card.highlight {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-family: "DM Mono", monospace;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.stat-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.side-widget-tip {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+  background: rgba(28, 25, 23, 0.03);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.mini-lb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mini-lb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(253, 251, 247, 0.6);
+  border: 1px solid var(--line);
+}
+
+.mini-lb-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mini-lb-name {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-lb-pts {
+  font-size: 12px;
+  font-family: "DM Mono", monospace;
+  color: var(--muted);
+}
+
+.side-widget-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #DC2626;
+  text-decoration: none;
+  margin-top: 4px;
+  transition: opacity 0.15s;
+}
+
+.side-widget-link:hover {
+  opacity: 0.8;
+}
+
+.mini-dramas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mini-drama-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #FDFBF7;
+  border: 1px solid var(--line);
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.mini-drama-item:hover {
+  border-color: #DC2626;
+  transform: translateX(2px);
+}
+
+.mini-drama-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-drama-info strong {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.mini-drama-info span {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+}
+
+.mini-arrow {
+  color: var(--muted);
 }
 
 /* ---------- DAILY META LINE & MODE SWITCH ---------- */
@@ -1027,7 +1246,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .site-footer-inner {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
   padding: 48px 0 32px;
   display: flex;
@@ -1097,7 +1316,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .footer-bottom {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
   padding: 20px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);

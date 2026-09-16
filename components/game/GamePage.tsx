@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GameClient } from "@/components/game/GameClient";
 import { TodaysFiveView } from "@/components/game/TodaysFiveView";
+import { SideContentPanel } from "@/components/game/SideContentPanel";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -48,19 +49,30 @@ export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props)
 
           {activeTab === "scene" && (
             <>
-              <h1 className="game-headline-kr">This scene—<br />where&apos;s it from?</h1>
+              <h1 className="game-headline-kr">
+                This scene—<br />where&apos;s it from?
+              </h1>
               <p className="game-headline-sub">One cut. Guess the K-drama.</p>
             </>
           )}
         </div>
 
-        {activeTab === "scene" ? (
-          <GameClient game={game} dramas={dramas} />
-        ) : (
-          (todaysFive ?? game.todaysFive) && (
-            <TodaysFiveView todaysFive={(todaysFive ?? game.todaysFive)!} dramas={dramas} />
-          )
-        )}
+        <div className="wide-desktop-layout">
+          <div className="main-game-column">
+            {activeTab === "scene" ? (
+              <GameClient game={game} dramas={dramas} />
+            ) : (
+              (todaysFive ?? game.todaysFive) && (
+                <TodaysFiveView
+                  todaysFive={(todaysFive ?? game.todaysFive)!}
+                  dramas={dramas}
+                />
+              )
+            )}
+          </div>
+
+          <SideContentPanel dramas={dramas} />
+        </div>
       </section>
 
       <SiteFooter />
