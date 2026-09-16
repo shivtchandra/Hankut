@@ -109,6 +109,7 @@ export type SongPayload = {
   artistEn: string;
   audioUrl: string;
   segments: number[]; // e.g. [1, 2, 4, 7, 12]
+  startSeconds?: number; // where each reveal begins in the clip
   dramaTitle?: string;
   aliases: string[];
   clues: Clue[];

@@ -4,25 +4,37 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { matchesAlias, normalize } from "@/lib/game/normalization";
 import {
-  buildShareText,
+  getDailyGameState,
   getStreak,
   recordDailyPlay,
+  saveDailyGameState,
 } from "@/lib/game/streak";
+import {
+  buildChallengeShare,
+  buildInviteShare,
+  buildScoreShare,
+  copyToClipboard,
+  shareOrCopy,
+  type ShareOutcome,
+} from "@/lib/game/share";
 import {
   IconChevronLeft,
   IconChevronRight,
   IconShare,
   IconFlame,
   IconSearch,
+  IconSkipForward,
 } from "@/components/icons/Icons";
 import type { Drama, TodayGame } from "@/types/game";
 
 type Props = {
   game: TodayGame;
   dramas: Drama[];
+  /** Newest released puzzle date, so share links to it stay on the "/" URL. */
+  todayDate: string;
 };
 
-export function GameClient({ game, dramas }: Props) {
+export function GameClient({ game, dramas, todayDate }: Props) {
   const { locale, t } = useLocale();
   const frames = game.scene.frames;
   const answer = game.scene.drama;
@@ -38,7 +50,9 @@ export function GameClient({ game, dramas }: Props) {
   const [suggestIndex, setSuggestIndex] = useState(-1);
   const [streak, setStreak] = useState(0);
   const [shareNotice, setShareNotice] = useState("");
+  const [shareLink, setShareLink] = useState("");
   const [inviteNotice, setInviteNotice] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
   const finishedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +83,20 @@ export function GameClient({ game, dramas }: Props) {
 
   useEffect(() => {
     setStreak(getStreak());
-  }, []);
+
+    // Restore daily game state from localStorage if previously played/in-progress
+    const saved = getDailyGameState(game.gameDate);
+    if (saved) {
+      setAttempts(saved.attempts || []);
+      setSolved(saved.solved || false);
+      if (typeof saved.frame === "number") {
+        setFrame(saved.frame);
+      }
+      if (saved.completed) {
+        finishedRef.current = true;
+      }
+    }
+  }, [game.gameDate]);
 
   useEffect(() => {
     frames.forEach((src) => {
@@ -89,6 +116,19 @@ export function GameClient({ game, dramas }: Props) {
     const next = recordDailyPlay(game.gameDate);
     setStreak(next);
   }, [finished, game.gameDate]);
+
+  // Save game progress to localStorage whenever attempts, solved, or frame changes
+  useEffect(() => {
+    if (attempts.length > 0 || solved) {
+      saveDailyGameState({
+        gameDate: game.gameDate,
+        attempts,
+        solved,
+        frame,
+        completed: finished,
+      });
+    }
+  }, [attempts, solved, frame, finished, game.gameDate]);
 
   function primaryTitle(drama: Drama) {
     return locale === "en" ? drama.titleEn : drama.titleKr;
@@ -162,44 +202,76 @@ export function GameClient({ game, dramas }: Props) {
     }
   }
 
+  function noticeFor(outcome: ShareOutcome, copiedMessage: string): string {
+    if (outcome === "copied") return copiedMessage;
+    if (outcome === "failed") return t("shareLinkFallback");
+    return "";
+  }
+
+  function renderShareLink(url: string, setNotice: (value: string) => void) {
+    return (
+      <div className="share-link-row">
+        <a
+          className="share-link-url"
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {url.replace(/^https?:\/\//, "")}
+        </a>
+        <button
+          type="button"
+          className="share-link-copy"
+          onClick={async () => {
+            const ok = await copyToClipboard(url);
+            setNotice(ok ? t("linkCopied") : t("shareLinkFallback"));
+          }}
+        >
+          {t("copyLink")}
+        </button>
+      </div>
+    );
+  }
+
   async function inviteFriend() {
-    const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://dramacut.com";
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Dramacut — Guess the K-drama from one cut",
-          url: shareUrl,
-        });
-        return;
-      } catch {
-        // Fallback to clipboard
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setInviteNotice(t("shareGameCopied"));
-    } catch {
-      setInviteNotice(t("shareFailed"));
-    }
+    const payload = buildInviteShare({
+      locale,
+      brand: t("brandName"),
+      gameDate: game.gameDate,
+      todayDate,
+    });
+    const outcome = await shareOrCopy(payload);
+    setInviteLink(payload.url);
+    setInviteNotice(noticeFor(outcome, t("shareGameCopied")));
   }
 
   async function shareResult() {
-    const text = buildShareText({
+    const payload = buildScoreShare({
+      locale,
       brand: t("brandName"),
       gameDate: game.gameDate,
+      todayDate,
       solved,
       attempts: attempts.length,
-      framesUsed: frame + 1,
+      score: scoreEarned,
     });
+    const outcome = await shareOrCopy(payload);
+    setShareLink(payload.url);
+    setShareNotice(noticeFor(outcome, t("shareCopied")));
+  }
 
-    try {
-      await navigator.clipboard.writeText(text);
-      setShareNotice(t("shareCopied"));
-    } catch {
-      setShareNotice(t("shareFailed"));
-    }
+  async function shareChallenge() {
+    const payload = buildChallengeShare({
+      locale,
+      brand: t("brandName"),
+      gameDate: game.gameDate,
+      todayDate,
+      solved,
+      attempts: attempts.length,
+    });
+    const outcome = await shareOrCopy(payload);
+    setShareLink(payload.url);
+    setShareNotice(noticeFor(outcome, t("challengeCopied")));
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -342,6 +414,8 @@ export function GameClient({ game, dramas }: Props) {
           <p className="game-notice success">{inviteNotice}</p>
         )}
 
+        {inviteLink && renderShareLink(inviteLink, setInviteNotice)}
+
         {/* ACTIVE PLAY: Single Unified Search & Guess Box */}
         {!finished ? (
           <div className="unified-play-box">
@@ -415,7 +489,8 @@ export function GameClient({ game, dramas }: Props) {
                 onClick={skipCut}
                 disabled={attempts.length >= 5}
               >
-                {t("skipCut")}
+                <IconSkipForward size={14} />
+                <span>{t("skipCut")}</span>
               </button>
 
               <div className="attempt-dots-track" aria-label={`Attempt ${attempts.length + 1} of 5`}>
@@ -501,12 +576,13 @@ export function GameClient({ game, dramas }: Props) {
               >
                 <IconShare size={15} /> {t("shareResult")}
               </button>
-              <a
+              <button
+                type="button"
                 className="result-challenge-link"
-                href={`/challenge/${game.id.slice(0, 8)}`}
+                onClick={() => void shareChallenge()}
               >
-                {t("challengeFriend")}
-              </a>
+                ⚔️ {t("challengeFriend")}
+              </button>
             </div>
 
             {shareNotice && (
@@ -514,6 +590,8 @@ export function GameClient({ game, dramas }: Props) {
                 {shareNotice}
               </p>
             )}
+
+            {shareLink && renderShareLink(shareLink, setShareNotice)}
           </div>
         )}
       </div>

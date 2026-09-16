@@ -8,6 +8,7 @@ import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { IconChevronLeft, IconChevronRight, IconInfo } from "@/components/icons/Icons";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { shiftGameDate } from "@/lib/game/dates";
 
 import type { Drama, TodayGame } from "@/types/game";
 
@@ -16,9 +17,11 @@ type Props = {
   dramas: Drama[];
   source: "supabase" | "demo";
   dateLabel: string;
+  /** Newest released puzzle date, resolved on the server for the viewer's day. */
+  todayDate: string;
 };
 
-export function GamePage({ game, dramas, dateLabel }: Props) {
+export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
   const { locale, t } = useLocale();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
@@ -27,23 +30,18 @@ export function GamePage({ game, dramas, dateLabel }: Props) {
     [game.gameDate]
   );
 
-  const prevDate = useMemo(() => {
-    const prev = new Date(currentDate);
-    prev.setDate(prev.getDate() - 1);
-    return prev.toISOString().split("T")[0];
-  }, [currentDate]);
-
-  const nextDate = useMemo(() => {
-    const next = new Date(currentDate);
-    next.setDate(next.getDate() + 1);
-    return next.toISOString().split("T")[0];
-  }, [currentDate]);
-
-  const todayStr = useMemo(
-    () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }),
-    []
+  const prevDate = useMemo(
+    () => shiftGameDate(game.gameDate, -1),
+    [game.gameDate],
   );
-  const isToday = game.gameDate >= todayStr;
+
+  const nextDate = useMemo(
+    () => shiftGameDate(game.gameDate, 1),
+    [game.gameDate],
+  );
+
+  const isToday = game.gameDate >= todayDate;
+  const canGoNext = nextDate <= todayDate;
 
   const formattedDate = useMemo(() => {
     try {
@@ -117,25 +115,30 @@ export function GamePage({ game, dramas, dateLabel }: Props) {
                 )}
               </div>
 
-              {isToday ? (
-                <span className="date-arrow-btn disabled" aria-disabled="true">
-                  <IconChevronRight size={16} />
-                </span>
-              ) : (
+              {canGoNext ? (
                 <Link
-                  href={`/?date=${nextDate}`}
+                  href={nextDate >= todayDate ? "/" : `/?date=${nextDate}`}
                   className="date-arrow-btn"
                   title={t("nextDay")}
                   aria-label={t("nextDay")}
                 >
                   <IconChevronRight size={16} />
                 </Link>
+              ) : (
+                <span
+                  className="date-arrow-btn disabled"
+                  aria-disabled="true"
+                  title={t("noFuturePuzzle")}
+                  aria-label={t("noFuturePuzzle")}
+                >
+                  <IconChevronRight size={16} />
+                </span>
               )}
             </div>
           </div>
 
           {/* Main Focused Game View */}
-          <GameClient game={game} dramas={dramas} />
+          <GameClient game={game} dramas={dramas} todayDate={todayDate} />
         </div>
 
         {/* Discovery Strip Below Game Fold */}

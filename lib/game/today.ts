@@ -1,5 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { DEMO_DRAMAS, DEMO_TODAY_GAME } from "@/lib/demo-data";
+import { isValidGameDate, seoulDate, seoulToday } from "@/lib/game/dates";
 import type { TodayGame } from "@/types/game";
 
 function one<T>(value: T | T[] | null | undefined): T | null {
@@ -7,10 +8,13 @@ function one<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
 
-export function seoulDate(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-  }).format(date);
+export { seoulDate };
+
+/** Clamps a requested date to a released puzzle date. */
+function resolveGameDate(targetDate?: string): string {
+  const today = seoulToday();
+  if (!targetDate || !isValidGameDate(targetDate)) return today;
+  return targetDate > today ? today : targetDate;
 }
 
 function mapRow(row: {
@@ -83,7 +87,7 @@ export async function getTodayGame(targetDate?: string): Promise<{
   source: "supabase" | "demo";
   dramas: TodayGame["scene"]["drama"][];
 }> {
-  const gameDate = targetDate || seoulDate();
+  const gameDate = resolveGameDate(targetDate);
   const configured =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -267,11 +271,12 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
     const payload: SongPayload = {
       id: puzzle.id,
       titleKr: entityMeta.title_kr ?? puzzle.title,
-      titleEn: entityMeta.title_en ?? "",
+      titleEn: entityMeta.title_en ?? puzzle.metadata?.title_en ?? "",
       artistKr: puzzle.metadata?.artist_kr ?? "",
       artistEn: puzzle.metadata?.artist_en ?? "",
       audioUrl: audioStep?.asset_url ?? "",
       segments: audioSegments.length > 0 ? audioSegments : [1, 2, 4, 7, 12],
+      startSeconds: Number(puzzle.metadata?.start_seconds ?? 0),
       dramaTitle: puzzle.metadata?.drama_title,
       aliases: answers.map((a: { answer_text: string }) => a.answer_text),
       clues: mapClues(clues),
@@ -358,7 +363,7 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
 
   try {
     const supabase = await createSupabaseServer();
-    const gameDate = targetDate || seoulDate();
+    const gameDate = resolveGameDate(targetDate);
 
     const { data: setRow } = await supabase
       .from("daily_sets")
