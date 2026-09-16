@@ -62,7 +62,6 @@ export function buildShareText({
   gameDate,
   solved,
   attempts,
-  framesUsed,
 }: ShareTextOptions): string {
   const blocks = Array.from({ length: 5 }, (_, i) => {
     if (!solved) return "⬛";
@@ -71,6 +70,7 @@ export function buildShareText({
     return "⬜";
   }).join("");
 
-  const result = solved ? `${attempts}번 만에 성공` : "실패";
-  return `${brand} · ${gameDate}\n${blocks}\n${result}\nhttps://jangmyeon.kr`;
+  const result = solved ? `${attempts}/5 Attempts (${attempts}번 만에 성공)` : "Failed (실패)";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://dramacut.com";
+  return `${brand} · ${gameDate}\n${blocks}\n${result}\nCan you guess today's K-drama cut?\n${origin}`;
 }
