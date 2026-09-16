@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { getInitialDNA } from "@/lib/game/dna";
 import { getStreak } from "@/lib/game/streak";
+import { IconConnections, IconFood, IconHangul, IconMusic, IconPeople, IconPlace, IconScene } from "@/components/icons/Icons";
 import type { KoreanCultureDNA } from "@/types/game";
 
 export default function ProfilePage() {
-  const [dna, setDna] = useState<KoreanCultureDNA>(getInitialDNA());
+  const [dna] = useState<KoreanCultureDNA>(getInitialDNA());
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
@@ -14,13 +15,13 @@ export default function ProfilePage() {
   }, []);
 
   const dnaCategories = [
-    { key: "drama", label: "🎬 드라마", value: dna.drama, color: "#DC2626" },
-    { key: "music", label: "🎵 음악", value: dna.music, color: "#EA580C" },
-    { key: "people", label: "👤 인물", value: dna.people, color: "#D97706" },
-    { key: "culture", label: "🧩 문화", value: dna.culture, color: "#059669" },
-    { key: "hangul", label: "🔤 한글", value: dna.hangul, color: "#2563EB" },
-    { key: "place", label: "🏙️ 장소", value: dna.place, color: "#7C3AED" },
-    { key: "food", label: "🍜 음식", value: dna.food, color: "#DB2777" },
+    { key: "drama", label: "드라마", icon: IconScene, value: dna.drama, color: "#DC2626" },
+    { key: "music", label: "음악", icon: IconMusic, value: dna.music, color: "#EA580C" },
+    { key: "people", label: "인물", icon: IconPeople, value: dna.people, color: "#D97706" },
+    { key: "culture", label: "문화", icon: IconConnections, value: dna.culture, color: "#059669" },
+    { key: "hangul", label: "한글", icon: IconHangul, value: dna.hangul, color: "#2563EB" },
+    { key: "place", label: "장소", icon: IconPlace, value: dna.place, color: "#7C3AED" },
+    { key: "food", label: "음식", icon: IconFood, value: dna.food, color: "#DB2777" },
   ];
 
   return (
@@ -53,7 +54,7 @@ export default function ProfilePage() {
             <strong className="stat-value">{streak}일</strong>
           </div>
           <div className="stat-card">
-            <span className="stat-label">맞힌 맞춤 수</span>
+            <span className="stat-label">맞힌 문제 수</span>
             <strong className="stat-value">42개</strong>
           </div>
           <div className="stat-card">
@@ -69,23 +70,29 @@ export default function ProfilePage() {
         <div className="dna-section">
           <h2>한국 문화 DNA 지수</h2>
           <div className="dna-list">
-            {dnaCategories.map((cat) => (
-              <div key={cat.key} className="dna-row">
-                <div className="dna-row-label">
-                  <span>{cat.label}</span>
-                  <strong>{cat.value}점</strong>
+            {dnaCategories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <div key={cat.key} className="dna-row">
+                  <div className="dna-row-label">
+                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Icon size={16} />
+                      {cat.label}
+                    </span>
+                    <strong>{cat.value}점</strong>
+                  </div>
+                  <div className="dna-bar-track">
+                    <div
+                      className="dna-bar-fill"
+                      style={{
+                        width: `${cat.value}%`,
+                        backgroundColor: cat.color,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="dna-bar-track">
-                  <div
-                    className="dna-bar-fill"
-                    style={{
-                      width: `${cat.value}%`,
-                      backgroundColor: cat.color,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

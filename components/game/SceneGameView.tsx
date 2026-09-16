@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { localizeClueLabel } from "@/lib/i18n/dictionary";
 import { matchesAlias, normalize } from "@/lib/game/normalization";
+import { IconChevronLeft, IconChevronRight, IconLock, IconUnlock, IconFlame } from "@/components/icons/Icons";
+import { getAttemptPoints } from "@/lib/game/scoring";
+import { recordPlay, getStreak } from "@/lib/game/streak";
 import type { Drama, ScenePayload } from "@/types/game";
 
 type Props = {
@@ -27,7 +30,12 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
   const [notice, setNotice] = useState("");
   const [shake, setShake] = useState(false);
   const [suggestIndex, setSuggestIndex] = useState(-1);
+  const [streak, setStreak] = useState(0);
   const startTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    setStreak(getStreak());
+  }, []);
 
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
@@ -65,6 +73,8 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
     if (isCorrect) {
       setSolved(true);
       setNotice(t("correct"));
+      const newStreak = recordPlay();
+      setStreak(newStreak);
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
@@ -105,21 +115,47 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
               {t("sceneLabel")} {String(frame + 1).padStart(2, "0")}
             </span>
             <span>
-              {attempts.length} {t("attemptsOf")}
+              {attempts.length} / 5
             </span>
           </div>
         </div>
 
-        <div className="frame-dots">
-          {frames.map((_, idx) => (
-            <span key={idx} className={idx <= frame ? "dot active" : "dot"} />
-          ))}
+        <div className="frame-nav-controls">
+          <button
+            type="button"
+            className="frame-nav-btn"
+            disabled={frame === 0}
+            onClick={() => setFrame((f) => Math.max(0, f - 1))}
+          >
+            <IconChevronLeft size={16} /> Prev cut
+          </button>
+
+          <div className="frame-dots">
+            {frames.map((_, idx) => (
+              <span
+                key={idx}
+                className={idx <= frame ? "dot active" : "dot"}
+                onClick={() => setFrame(idx)}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="frame-nav-btn"
+            disabled={frame >= Math.min(attempts.length, frames.length - 1)}
+            onClick={() => setFrame((f) => Math.min(frames.length - 1, f + 1))}
+          >
+            Next cut <IconChevronRight size={16} />
+          </button>
         </div>
       </div>
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">{t("yourGuess")}</span>
+          <div className="guess-heading-top">
+            <span className="eyebrow">{t("yourGuess")}</span>
+          </div>
           <h2>{t("whatDrama")}</h2>
         </div>
 
@@ -152,7 +188,7 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
 
           {suggestions.length > 0 && !finished && (
             <div className="suggestions" role="listbox">
-              {suggestions.map((d, i) => (
+              {suggestions.map((d) => (
                 <button
                   key={d.id}
                   type="button"
@@ -180,7 +216,14 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
                 disabled={!unlocked || used}
                 onClick={() => useClue(clue.id, clue.unlockAfterAttempt)}
               >
-                <span>{localizeClueLabel(clue.label, locale)}</span>
+                <div className="clue-header">
+                  <span>{localizeClueLabel(clue.label, locale)}</span>
+                  {used ? (
+                    <IconUnlock size={14} />
+                  ) : (
+                    <IconLock size={14} />
+                  )}
+                </div>
                 <strong>{used ? clue.value : unlocked ? t("reveal") : t("locked")}</strong>
               </button>
             );
@@ -192,6 +235,23 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
             <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
             <h3>{primaryTitle(answer)}</h3>
             <p>{secondaryTitle(answer)}</p>
+
+            <div style={{ display: "flex", gap: 12, marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--line)", alignItems: "center" }}>
+              <div style={{ background: solved ? "var(--paper-soft)" : "#fef2f2", padding: "8px 14px", borderRadius: "var(--radius-sm)" }}>
+                <span className="muted" style={{ fontSize: 11, display: "block" }}>SCORE</span>
+                <strong style={{ fontSize: 18, color: solved ? "var(--green)" : "#dc2626" }}>
+                  {solved ? `+${getAttemptPoints(attempts.length)} pts` : "0 pts"}
+                </strong>
+              </div>
+
+              <div style={{ background: "var(--paper-soft)", padding: "8px 14px", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", gap: 8 }}>
+                <IconFlame size={20} style={{ color: "var(--accent)" }} />
+                <div>
+                  <span className="muted" style={{ fontSize: 11, display: "block" }}>DAILY STREAK</span>
+                  <strong style={{ fontSize: 18 }}>{streak} Days</strong>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

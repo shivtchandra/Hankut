@@ -1,55 +1,67 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Link from "next/link";
+import {
+  IconCalendar,
+  IconScene,
+  IconMusic,
+  IconHangul,
+  IconConnections,
+  IconPeople,
+  IconSearch,
+  IconTrophy,
+} from "@/components/icons/Icons";
 
 const NAV = [
   {
-    label: "STUDIO",
-    items: [{ href: "/admin", title: "대시보드" }],
-  },
-  {
-    label: "CONTENT",
+    label: "DAILY GAME ENGINE",
     items: [
-      { href: "/admin/entities", title: "엔티티 관리에 (Entities)" },
-      { href: "/admin/dramas", title: "드라마 (Dramas)" },
-      { href: "/admin/movies", title: "영화 (Movies)" },
-      { href: "/admin/music", title: "음악/OST (Music)" },
-      { href: "/admin/people", title: "인물/배우 (People)" },
+      { href: "/admin/daily", label: "Daily Builder", icon: IconCalendar },
+      { href: "/admin/calendar", label: "Schedule Calendar", icon: IconCalendar },
     ],
   },
   {
-    label: "PUZZLES",
+    label: "PUZZLE VAULT",
     items: [
-      { href: "/admin/scenes", title: "장면 스튜디오 (Scene)" },
-      { href: "/admin/audio", title: "오디오 스튜디오 (Audio)" },
-      { href: "/admin/chosung", title: "초성 스튜디오 (Chosung)" },
-      { href: "/admin/connections", title: "연결고리 (Connections)" },
+      { href: "/admin/scenes", label: "Scene Puzzles", icon: IconScene },
+      { href: "/admin/audio", label: "Song Puzzles", icon: IconMusic },
+      { href: "/admin/chosung", label: "Chosung Puzzles", icon: IconHangul },
+      { href: "/admin/connections", label: "Connections", icon: IconConnections },
+      { href: "/admin/people", label: "People Puzzles", icon: IconPeople },
     ],
   },
   {
-    label: "PUBLISH",
+    label: "CONTENT ARCHIVE",
     items: [
-      { href: "/admin/daily", title: "오늘의 5 빌더" },
-      { href: "/admin/calendar", title: "발행 달력 (Calendar)" },
+      { href: "/admin/dramas", label: "Dramas & Movies", icon: IconSearch },
+      { href: "/admin/entities", label: "Entity Graph", icon: IconConnections },
+      { href: "/admin/assets", label: "Media & Rights", icon: IconScene },
     ],
   },
   {
-    label: "QUALITY & MEDIA",
+    label: "SYSTEM & INSIGHTS",
     items: [
-      { href: "/admin/assets", title: "미디어 라이브러리" },
-      { href: "/admin/content-health", title: "콘텐츠 헬스 체크" },
+      { href: "/admin", label: "Dashboard", icon: IconTrophy },
+      { href: "/admin/analytics", label: "Analytics", icon: IconTrophy },
+      { href: "/admin/audit", label: "Audit Log", icon: IconCalendar },
     ],
-  },
-  {
-    label: "INSIGHT",
-    items: [{ href: "/admin/analytics", title: "통계 및 리텐션" }],
   },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  }
+
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <span className="admin-mark">스튜디오</span>
+          <span className="admin-mark">컷</span>
           <div>
             <strong>그 장면 뭐였지?</strong>
             <span>Content Studio</span>
@@ -60,16 +72,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           {NAV.map((group) => (
             <div key={group.label}>
               <small>{group.label}</small>
-              {group.items.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  {item.title}
-                </Link>
-              ))}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    prefetch={true}
+                    className={isActive(item.href) ? "active" : ""}
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </Link>
+                );
+              })}
             </div>
           ))}
-          <div>
-            <small>SYSTEM</small>
-            <Link href="/">게임 사이트 열기 ↗</Link>
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+            <small>SITE</small>
+            <Link href="/" prefetch={false}>← Open Game Site</Link>
           </div>
         </nav>
       </aside>

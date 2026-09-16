@@ -43,6 +43,30 @@ export async function createDrama(input: z.input<typeof dramaSchema>) {
   return data;
 }
 
+export async function quickCreateDrama(titleEn: string): Promise<{ id: string; title_en: string; title_kr: string }> {
+  await requireAdmin();
+  const db = await createSupabaseAdmin();
+  const { data, error } = await db
+    .from("dramas")
+    .insert({ title_en: titleEn, title_kr: titleEn, status: "draft", genres: [], aliases: [titleEn] })
+    .select("id, title_en, title_kr")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/dramas");
+  return data;
+}
+
+export async function updateDramaPoster(id: string, posterUrl: string) {
+  await requireAdmin();
+  const db = await createSupabaseAdmin();
+  const { error } = await db
+    .from("dramas")
+    .update({ poster_url: posterUrl || null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/dramas/${id}`);
+}
+
 export async function listDramas() {
   await requireAdmin();
   const db = await createSupabaseAdmin();

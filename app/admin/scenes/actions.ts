@@ -70,8 +70,76 @@ export async function updateSceneMeta(input: {
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Sync with daily_games and calendar if published
+  if (input.status === "published" || input.status === "ready") {
+    const match = data.scene_code?.match(/(\d{4})(\d{2})(\d{2})/);
+    if (match) {
+      const gameDate = `${match[1]}-${match[2]}-${match[3]}`;
+      await db.from("daily_games").upsert(
+        {
+          game_date: gameDate,
+          scene_id: data.id,
+          difficulty: input.difficulty ?? 5,
+          status: "published",
+        },
+        { onConflict: "game_date" }
+      );
+    }
+  }
+
   revalidatePath(`/admin/scenes/${input.sceneId}`);
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/daily");
+  revalidatePath("/");
   return data;
+}
+
+export async function publishSceneForDate(sceneId: string, gameDate: string) {
+  await requireAdmin();
+  const db = await createSupabaseAdmin();
+
+  const { data: scene, error: sceneErr } = await db
+    .from("scenes")
+    .select("id, scene_code, episode, difficulty, drama:dramas(title_kr)")
+    .eq("id", sceneId)
+    .single();
+
+  if (sceneErr || !scene) throw new Error("Scene not found");
+
+  const formattedCode = `DC-${gameDate.replace(/-/g, "")}-${sceneId.slice(0, 4).toUpperCase()}`;
+
+  const { error: updateErr } = await db
+    .from("scenes")
+    .update({
+      status: "published",
+      scene_code: formattedCode,
+    })
+    .eq("id", sceneId);
+
+  if (updateErr) throw new Error(updateErr.message);
+
+  const { error: dailyErr } = await db
+    .from("daily_games")
+    .upsert(
+      {
+        game_date: gameDate,
+        scene_id: sceneId,
+        difficulty: scene.difficulty ?? 5,
+        status: "published",
+      },
+      { onConflict: "game_date" }
+    );
+
+  if (dailyErr) throw new Error(dailyErr.message);
+
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/daily");
+  revalidatePath("/admin/scenes");
+  revalidatePath("/");
+
+  const dramaTitle = Array.isArray(scene.drama) ? scene.drama[0]?.title_kr : (scene.drama as any)?.title_kr;
+  return { ok: true, gameDate, sceneCode: formattedCode, title: dramaTitle ?? formattedCode };
 }
 
 export async function attachSceneAsset(input: {
@@ -165,7 +233,7 @@ export async function listScenes() {
   const { data, error } = await db
     .from("scenes")
     .select(
-      "id, scene_code, episode, difficulty, status, rights_status, drama:dramas(title_kr, title_en)",
+      "id, scene_code, episode, difficulty, status, rights_status, drama:dramas(title_kr, title_en), assets:scene_assets(id, frame_order)",
     )
     .order("created_at", { ascending: false })
     .limit(100);

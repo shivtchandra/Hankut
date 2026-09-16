@@ -1,16 +1,36 @@
-export default function AdminMusicPage() {
+import { listEntities } from "@/app/admin/entities/actions";
+import { MusicClient } from "./MusicClient";
+
+export default async function AdminMusicPage() {
+  let rows: Awaited<ReturnType<typeof listEntities>>["entities"] = [];
+  let total = 0;
+  try {
+    const result = await listEntities({ type: "song", limit: 100 });
+    rows = result.entities;
+    total = result.total;
+  } catch {
+    rows = [];
+  }
+
+  const clientRows = rows.map((r) => ({
+    id: r.id,
+    titleKr: r.titleKr,
+    titleEn: r.titleEn,
+    status: r.status,
+    metadata: r.metadata as Record<string, unknown>,
+  }));
+
   return (
-    <div className="admin-page">
+    <>
       <div className="admin-title">
         <div>
-          <span className="eyebrow">CONTENT</span>
-          <h1>음악/OST (Music) 관리자</h1>
+          <div className="eyebrow">CONTENT</div>
+          <h1>Music / OST</h1>
+          <p className="muted">{total} songs in the catalog.</p>
         </div>
-        <button type="button" className="primary">+ OST 추가</button>
       </div>
-      <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e7e5e4", marginTop: "20px" }}>
-        <p>OST 및 명곡 오디오 퍼즐 카탈로그 관리</p>
-      </div>
-    </div>
+
+      <MusicClient initial={clientRows} />
+    </>
   );
 }

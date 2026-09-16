@@ -1,9 +1,22 @@
 import { listDailyGames } from "../daily/actions";
+import { getSceneStudio } from "../scenes/actions";
 import { seoulDate } from "@/lib/game/today";
+import { CalendarPickerView } from "@/components/admin/CalendarPickerView";
 
-export default async function CalendarPage() {
+type Props = {
+  searchParams: Promise<{
+    month?: string;
+    publishSceneId?: string;
+    publishedDate?: string;
+    publishedTitle?: string;
+  }>;
+};
+
+export default async function CalendarPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const today = seoulDate();
-  const monthPrefix = today.slice(0, 7);
+  const monthPrefix = sp.month ?? today.slice(0, 7);
+
   let rows: Awaited<ReturnType<typeof listDailyGames>> = [];
 
   try {
@@ -12,14 +25,21 @@ export default async function CalendarPage() {
     rows = [];
   }
 
-  const byDate = new Map(
-    rows.map((row) => [row.game_date, row] as const),
-  );
+  let publishTitle: string | undefined = undefined;
+  if (sp.publishSceneId) {
+    try {
+      const sceneData = await getSceneStudio(sp.publishSceneId);
+      const drama = Array.isArray(sceneData.drama) ? sceneData.drama[0] : sceneData.drama;
+      publishTitle = drama?.title_kr ?? sceneData.scene_code;
+    } catch {
+      publishTitle = "Scene Puzzle";
+    }
+  }
 
   const [year, month] = monthPrefix.split("-").map(Number);
   const first = new Date(Date.UTC(year, month - 1, 1));
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const startPad = (first.getUTCDay() + 6) % 7; // Monday-first
+  const startPad = (first.getUTCDay() + 6) % 7;
 
   const cells: ({ day: number; iso: string } | null)[] = [
     ...Array.from({ length: startPad }, () => null),
@@ -30,59 +50,19 @@ export default async function CalendarPage() {
     }),
   ];
 
+  const monthLabel = first.toLocaleString("en", { month: "long", year: "numeric" });
+  const rowsByDate: [string, (typeof rows)[number]][] = rows.map((r) => [r.game_date, r]);
+
   return (
-    <>
-      <div className="admin-title">
-        <div>
-          <div className="eyebrow">PUBLISH</div>
-          <h1>
-            {first.toLocaleString("en", { month: "long", year: "numeric" })}
-          </h1>
-        </div>
-      </div>
-
-      <div
-        className="calendar-grid"
-        style={{ marginBottom: 10, color: "var(--muted)", fontSize: 11 }}
-      >
-        {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((d) => (
-          <div key={d} style={{ padding: "0 10px" }}>
-            {d}
-          </div>
-        ))}
-      </div>
-
-      <div className="calendar-grid">
-        {cells.map((cell, index) => {
-          if (!cell) return <div key={`pad-${index}`} />;
-          const row = byDate.get(cell.iso);
-          const scene = Array.isArray(row?.scene) ? row?.scene[0] : row?.scene;
-          const drama = Array.isArray(scene?.drama)
-            ? scene?.drama[0]
-            : scene?.drama;
-
-          return (
-            <div
-              key={cell.iso}
-              className={
-                cell.iso === today ? "calendar-cell today" : "calendar-cell"
-              }
-            >
-              <div className="day">{cell.day}</div>
-              {row ? (
-                <>
-                  <strong>{drama?.title_kr ?? scene?.scene_code}</strong>
-                  <span className="tag">{row.status}</span>
-                </>
-              ) : (
-                <span className="muted" style={{ fontSize: 12 }}>
-                  empty
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </>
+    <CalendarPickerView
+      today={today}
+      monthLabel={monthLabel}
+      cells={cells}
+      rowsByDate={rowsByDate as never}
+      publishSceneId={sp.publishSceneId}
+      publishTitle={publishTitle}
+      publishedDate={sp.publishedDate}
+      publishedTitle={sp.publishedTitle}
+    />
   );
 }

@@ -1,98 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+const CLIP_DURATIONS = [3, 6, 12, 20, 30];
 
 export function AudioStudio() {
-  const [title, setTitle] = useState("그대라는 시");
-  const [artist, setArtist] = useState("태연");
-  const [dramaTitle, setDramaTitle] = useState("호텔 델루나");
-  const [segments, setSegments] = useState<number[]>([1, 2, 4, 7, 12]);
-  const [audioUrl, setAudioUrl] = useState("https://actions.google.com/sounds/v1/ambiences/outdoor_park.ogg");
-  const [rightsStatus, setRightsStatus] = useState("approved");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [drama, setDrama] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState("");
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  function saveAudioPuzzle() {
-    setNotice("오디오 퍼즐이 저장 및 발행되었습니다.");
+  async function handleFile(file: File) {
+    setUploading(true);
+    setNotice("Uploading…");
+    const res = await fetch("/api/uploads/media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentType: file.type, fileName: file.name, folder: "audio" }),
+    });
+    if (!res.ok) { setNotice("Upload auth failed."); setUploading(false); return; }
+    const { signedUrl, publicUrl } = await res.json();
+    const put = await fetch(signedUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+    if (!put.ok) { setNotice("Upload failed."); setUploading(false); return; }
+    setAudioUrl(publicUrl);
+    setNotice("Audio uploaded.");
+    setUploading(false);
+  }
+
+  async function handleSave() {
+    if (!audioUrl || !drama.trim()) { setNotice("Add audio and drama name first."); return; }
+    setNotice("Saved.");
   }
 
   return (
-    <div className="admin-studio-wrap">
+    <div>
       <div className="admin-title">
         <div>
-          <span className="eyebrow">AUDIO STUDIO</span>
-          <h1>오늘의 노래 (오디오 퍼즐) 편집기</h1>
+          <div className="eyebrow">AUDIO STUDIO</div>
+          <h1>Song Puzzle</h1>
+          <p className="muted">Upload one audio file — 5 clips auto-cut at 3 / 6 / 12 / 20 / 30s</p>
         </div>
-        <button type="button" className="primary" onClick={saveAudioPuzzle}>
-          저장 및 발행
+        <button className="primary" type="button" onClick={handleSave} disabled={!audioUrl || !drama.trim()}>
+          Save &amp; Publish
         </button>
       </div>
 
-      {notice && <p className="game-notice">{notice}</p>}
+      {notice && (
+        <div style={{ padding: "10px 14px", borderRadius: "var(--radius-md)", marginBottom: 16, background: "var(--paper-soft)", fontSize: 13, color: "var(--muted)" }}>
+          {notice}
+        </div>
+      )}
 
-      <div className="studio-grid" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px" }}>
-        <div className="main-editor-card" style={{ background: "var(--card-bg, #fff)", padding: "24px", borderRadius: "12px", border: "1px solid var(--border-stone-200, #e7e5e4)" }}>
-          <h3>오디오 음원 및 구간 설정</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 600 }}>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>오디오 파일 URL</label>
+        {/* Drama name */}
+        <div className="admin-card" style={{ padding: "16px 20px" }}>
+          <label style={{ fontWeight: 600, fontSize: 13, display: "block", marginBottom: 8 }}>Drama / Movie</label>
+          <input
+            value={drama}
+            onChange={(e) => setDrama(e.target.value)}
+            placeholder="e.g. 호텔 델루나"
+            style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", fontSize: 14 }}
+          />
+        </div>
+
+        {/* Audio upload */}
+        <div className="admin-card" style={{ padding: "16px 20px" }}>
+          <label style={{ fontWeight: 600, fontSize: 13, display: "block", marginBottom: 8 }}>Audio File</label>
+          <label style={{
+            display: "inline-block", padding: "8px 16px", borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--line)", fontSize: 13, cursor: "pointer",
+            background: uploading ? "var(--paper-soft)" : "var(--paper)",
+            color: uploading ? "var(--muted)" : "var(--ink)",
+          }}>
+            {uploading ? "Uploading…" : audioUrl ? "Replace audio" : "Upload audio"}
             <input
-              type="text"
-              value={audioUrl}
-              onChange={(e) => setAudioUrl(e.target.value)}
-              style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ccc" }}
+              type="file" accept="audio/*" hidden disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }}
             />
-          </div>
+          </label>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>단계별 오디오 재생 구간 (초 단위)</label>
-            <div style={{ display: "flex", gap: "12px" }}>
-              {segments.map((sec, idx) => (
-                <div key={idx} style={{ textAlign: "center" }}>
-                  <span style={{ fontSize: "12px", display: "block", color: "#666" }}>단계 {idx + 1}</span>
-                  <input
-                    type="number"
-                    value={sec}
-                    onChange={(e) => {
-                      const next = [...segments];
-                      next[idx] = Number(e.target.value);
-                      setSegments(next);
-                    }}
-                    style={{ width: "60px", padding: "8px", textAlign: "center", borderRadius: "6px", border: "1px solid #ccc" }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ padding: "16px", background: "#f8fafc", borderRadius: "8px", marginTop: "24px" }}>
-            <h4 style={{ margin: "0 0 12px 0" }}>오디오 바로 듣기 테스트</h4>
-            <audio controls src={audioUrl} style={{ width: "100%" }} />
-          </div>
+          {audioUrl && (
+            <>
+              <span style={{ marginLeft: 10, fontSize: 11, color: "var(--green)" }}>✓ Uploaded</span>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <audio ref={audioRef} src={audioUrl} controls style={{ display: "block", marginTop: 12, width: "100%" }} />
+            </>
+          )}
         </div>
 
-        <div className="sidebar-card" style={{ background: "var(--card-bg, #fff)", padding: "24px", borderRadius: "12px", border: "1px solid var(--border-stone-200, #e7e5e4)" }}>
-          <h3>메타데이터 및 저작권</h3>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "4px" }}>곡 제목 (한글)</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%", padding: "8px" }} />
+        {/* Clip preview */}
+        <div className="admin-card" style={{ padding: "16px 20px" }}>
+          <p style={{ fontWeight: 600, fontSize: 13, margin: "0 0 12px" }}>5 Reveal Clips</p>
+          <div style={{ display: "flex", gap: 8 }}>
+            {CLIP_DURATIONS.map((sec, i) => (
+              <div key={sec} style={{ flex: 1, textAlign: "center", padding: "10px 6px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--paper-soft)" }}>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Clue {i + 1}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{sec}s</div>
+              </div>
+            ))}
           </div>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "4px" }}>가수 이름</label>
-            <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)} style={{ width: "100%", padding: "8px" }} />
-          </div>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "4px" }}>삽입 드라마 / 영화</label>
-            <input type="text" value={dramaTitle} onChange={(e) => setDramaTitle(e.target.value)} style={{ width: "100%", padding: "8px" }} />
-          </div>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "4px" }}>저작권 권리 상태</label>
-            <select value={rightsStatus} onChange={(e) => setRightsStatus(e.target.value)} style={{ width: "100%", padding: "8px" }}>
-              <option value="review_required">검토 필요 (Review Required)</option>
-              <option value="approved">승인 완료 (Approved)</option>
-              <option value="restricted">제한됨 (Restricted)</option>
-            </select>
-          </div>
+          <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>
+            Player hears 3s first. Each wrong guess reveals the next clip.
+          </p>
         </div>
+
       </div>
     </div>
   );

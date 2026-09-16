@@ -1,6 +1,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { DEMO_DRAMAS } from "@/lib/demo-data";
+import { IconConnections, IconHangul, IconMusic, IconPeople, IconPlace, IconScene } from "@/components/icons/Icons";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -33,11 +34,23 @@ export default function DramaDetailPage({ params }: Props) {
 
           <div className="entity-relations-section">
             <h3>연관 엔티티 그래프</h3>
-            <ul>
-              <li>👤 주연 배우: 아이유 (이지은), 박보검</li>
-              <li>🏙️ 대표 촬영지: 제주도 서귀포시</li>
-              <li>🎵 대표 OST: 태연 - 그대라는 시</li>
-              <li>🧩 연관 키워드: #제주배경 #슬라이스오브라이프 #넷플릭스원작</li>
+            <ul className="relations-list">
+              <li>
+                <IconPeople size={16} />
+                <span>주연 배우: 아이유 (이지은), 박보검</span>
+              </li>
+              <li>
+                <IconPlace size={16} />
+                <span>대표 촬영지: 제주도 서귀포시</span>
+              </li>
+              <li>
+                <IconMusic size={16} />
+                <span>대표 OST: 태연 - 그대라는 시</span>
+              </li>
+              <li>
+                <IconConnections size={16} />
+                <span>연관 키워드: #제주배경 #슬라이스오브라이프 #넷플릭스원작</span>
+              </li>
             </ul>
           </div>
 
@@ -45,17 +58,23 @@ export default function DramaDetailPage({ params }: Props) {
             <h3>관련 등장 퍼즐</h3>
             <div className="related-puzzles-grid">
               <div className="rel-puzzle-chip">
-                <span>🎬 장면 퍼즐</span>
-                <strong>오늘의 장면 #247 (3회 명장면)</strong>
+                <IconScene size={16} />
+                <div>
+                  <span>장면 퍼즐</span>
+                  <strong>오늘의 장면 #247 (3회 명장면)</strong>
+                </div>
               </div>
               <div className="rel-puzzle-chip">
-                <span>🔤 초성 퍼즐</span>
-                <strong>초성 맞히기 #245 (ㅍㅆ ㅅㅇㅅㄷ)</strong>
+                <IconHangul size={16} />
+                <div>
+                  <span>초성 퍼즐</span>
+                  <strong>초성 맞히기 #245 (ㅍㅆ ㅅㅇㅅㄷ)</strong>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="action-row">
+          <div className="action-row" style={{ marginTop: 28 }}>
             <Link href="/" className="primary-btn">
               오늘의 게임에서 맞춰보기
             </Link>

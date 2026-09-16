@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconFlame, IconTrophy } from "@/components/icons/Icons";
 
 export default function LeaderboardPage() {
   const [tab, setTab] = useState<"today" | "week" | "month" | "all">("today");
@@ -83,7 +84,14 @@ export default function LeaderboardPage() {
               {mockLeaderboard.map((item) => (
                 <tr key={item.rank} className={item.rank <= 3 ? `top-${item.rank}` : ""}>
                   <td className="lb-rank">
-                    {item.rank === 1 ? "🥇 1위" : item.rank === 2 ? "🥈 2위" : item.rank === 3 ? "🥉 3위" : `${item.rank}위`}
+                    {item.rank <= 3 ? (
+                      <span className={`rank-badge rank-${item.rank}`}>
+                        <IconTrophy size={14} style={{ marginRight: 4 }} />
+                        {item.rank}위
+                      </span>
+                    ) : (
+                      `${item.rank}위`
+                    )}
                   </td>
                   <td className="lb-name">
                     <strong>{item.name}</strong>
@@ -91,7 +99,10 @@ export default function LeaderboardPage() {
                   <td className="lb-score">
                     <strong>{item.score} / 25점</strong>
                   </td>
-                  <td className="lb-streak">🔥 {item.streak}일</td>
+                  <td className="lb-streak">
+                    <IconFlame size={14} style={{ marginRight: 4, display: "inline-block", verticalAlign: "middle" }} />
+                    {item.streak}일
+                  </td>
                   <td className="lb-cat">{item.category}</td>
                 </tr>
               ))}

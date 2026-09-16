@@ -29,7 +29,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
   const currentItem = todaysFive.items[currentIndex];
 
   function handleGameComplete(type: string, attemptsUsed: number) {
-    const gameScore = Math.max(1, 6 - attemptsUsed);
+    const gameScore = Math.max(0, (6 - attemptsUsed) * 5);
     const nextScores = [...scores, { type, score: gameScore }];
     setScores(nextScores);
 

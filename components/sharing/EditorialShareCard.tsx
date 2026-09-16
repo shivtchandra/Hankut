@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck, IconFlame, IconShare } from "@/components/icons/Icons";
 
 type Props = {
   gameDate: string;
@@ -9,7 +10,7 @@ type Props = {
     maxScore: number;
     percentileText: string;
     streakDays: number;
-    categoryBreakdown: { icon: string; label: string; score: number; max: number }[];
+    categoryBreakdown: { label: string; score: number; max: number }[];
   };
 };
 
@@ -20,7 +21,7 @@ export function EditorialShareCard({ gameDate, deokryeokResult }: Props) {
 점수: ${deokryeokResult.totalScore} / ${deokryeokResult.maxScore} (${deokryeokResult.percentileText})
 연속 정답: ${deokryeokResult.streakDays}일 연속
 
-${deokryeokResult.categoryBreakdown.map((c) => `${c.icon} ${c.label}: ${'🟩'.repeat(Math.max(1, c.score))}`).join("\n")}
+${deokryeokResult.categoryBreakdown.map((c) => `${c.label}: ${'■'.repeat(Math.max(1, c.score))}`).join("\n")}
 
 👉 나도 도전하기: https://kdrama-scene-game.vercel.app`;
 
@@ -40,7 +41,7 @@ ${deokryeokResult.categoryBreakdown.map((c) => `${c.icon} ${c.label}: ${'🟩'.r
 
     try {
       await navigator.clipboard.writeText(formattedText);
-      setNotice("결과가 클립보드에 복사되었습니다! 📋");
+      setNotice("결과가 클립보드에 복사되었습니다!");
     } catch {
       setNotice("복사에 실패했습니다.");
     }
@@ -62,7 +63,6 @@ ${deokryeokResult.categoryBreakdown.map((c) => `${c.icon} ${c.label}: ${'🟩'.r
         <div className="share-breakdown-list">
           {deokryeokResult.categoryBreakdown.map((cat, idx) => (
             <div key={idx} className="share-breakdown-row">
-              <span className="row-icon">{cat.icon}</span>
               <span className="row-label">{cat.label}</span>
               <div className="row-blocks">
                 {[...Array(5)].map((_, i) => (
@@ -77,12 +77,14 @@ ${deokryeokResult.categoryBreakdown.map((c) => `${c.icon} ${c.label}: ${'🟩'.r
         </div>
 
         <div className="share-footer-meta">
-          <span>🔥 {deokryeokResult.streakDays}일 연속 플레이 중</span>
+          <IconFlame size={16} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
+          <span>{deokryeokResult.streakDays}일 연속 플레이 중</span>
         </div>
       </div>
 
       <div className="share-actions">
         <button type="button" className="share-btn-primary" onClick={handleShare}>
+          <IconShare size={16} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
           결과 공유하기
         </button>
         <a href={`/challenge/today`} className="share-btn-secondary">
@@ -90,7 +92,12 @@ ${deokryeokResult.categoryBreakdown.map((c) => `${c.icon} ${c.label}: ${'🟩'.r
         </a>
       </div>
 
-      {notice && <p className="share-notice">{notice}</p>}
+      {notice && (
+        <p className="share-notice" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12 }}>
+          <IconCheck size={16} />
+          {notice}
+        </p>
+      )}
     </div>
   );
 }

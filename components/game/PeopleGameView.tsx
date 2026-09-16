@@ -1,8 +1,8 @@
 "use client";
 
-import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useRef, useState } from "react";
 import { matchesAlias } from "@/lib/game/normalization";
+import { IconLock, IconPeople, IconUnlock } from "@/components/icons/Icons";
 import type { PeoplePayload } from "@/types/game";
 
 type Props = {
@@ -12,7 +12,6 @@ type Props = {
 };
 
 export function PeopleGameView({ payload, onSolve, onFail }: Props) {
-  const { t } = useLocale();
   const frames = payload.frames;
   const [frame, setFrame] = useState(0);
   const [guess, setGuess] = useState("");
@@ -37,7 +36,7 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
     if (isCorrect) {
       setSolved(true);
-      setNotice(`${t("correct")} 👤`);
+      setNotice("정답입니다!");
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
@@ -75,7 +74,10 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
           <div className="scene-grain" aria-hidden />
           <div className="scene-vignette" aria-hidden />
           <div className="scene-hud">
-            <span>{t("peopleStep").replace("{n}", String(frame + 1))}</span>
+            <span>
+              <IconPeople size={14} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
+              인물 단계 {frame + 1} / 5
+            </span>
             <span>{payload.category}</span>
           </div>
         </div>
@@ -83,8 +85,8 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">{t("peopleTitle")}</span>
-          <h2>{t("whatPeople")}</h2>
+          <span className="eyebrow">누구지?</span>
+          <h2>사진 속 인물의 이름을 맞혀보세요</h2>
         </div>
 
         <div className="search-wrap">
@@ -92,11 +94,11 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitGuess()}
-            placeholder={t("peoplePlaceholder")}
+            placeholder="인물 이름을 입력하세요 (예: 박보검, 아이유)"
             disabled={finished}
           />
           <button type="button" onClick={submitGuess} disabled={!guess.trim() || finished}>
-            {t("submit")}
+            제출
           </button>
         </div>
 
@@ -114,8 +116,11 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
                 disabled={!unlocked || used}
                 onClick={() => useClue(clue.id)}
               >
-                <span>{clue.label}</span>
-                <strong>{used ? clue.value : unlocked ? t("reveal") : t("locked")}</strong>
+                <div className="clue-header">
+                  <span>{clue.label}</span>
+                  {used ? <IconUnlock size={14} /> : <IconLock size={14} />}
+                </div>
+                <strong>{used ? clue.value : unlocked ? "힌트 열기" : "잠김"}</strong>
               </button>
             );
           })}
@@ -123,7 +128,7 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
         {finished && (
           <div className="result-card">
-            <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
+            <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
             <h3>{payload.nameKr}</h3>
             <p>{payload.nameEn} ({payload.category})</p>
           </div>

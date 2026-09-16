@@ -10,6 +10,7 @@ import {
   getStreak,
   recordDailyPlay,
 } from "@/lib/game/streak";
+import { IconChevronLeft, IconChevronRight, IconLock, IconShare, IconUnlock, IconFlame } from "@/components/icons/Icons";
 import type { Drama, TodayGame } from "@/types/game";
 
 type Props = {
@@ -35,12 +36,18 @@ export function GameClient({ game, dramas }: Props) {
   const [suggestIndex, setSuggestIndex] = useState(-1);
   const [streak, setStreak] = useState(0);
   const [shareNotice, setShareNotice] = useState("");
+  const [inviteNotice, setInviteNotice] = useState("");
   const finishedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
   const currentSrc = frames[frame];
+
+  const unlockedFrame = useMemo(() => {
+    if (solved) return Math.max(frames.length - 1, 0);
+    return Math.min(attempts.length, Math.max(frames.length - 1, 0));
+  }, [solved, attempts.length, frames.length]);
 
   const suggestions = useMemo(() => {
     if (!guess.trim()) return [];
@@ -84,12 +91,14 @@ export function GameClient({ game, dramas }: Props) {
     return locale === "en" ? drama.titleKr : drama.titleEn;
   }
 
-  function advanceFrame() {
-    setFrame((current) => {
-      const next = Math.min(current + 1, Math.max(frames.length - 1, 0));
-      return next;
-    });
+  function goToFrame(targetIndex: number) {
+    if (targetIndex < 0 || targetIndex > unlockedFrame) return;
+    setFrame(targetIndex);
     setFrameKey((k) => k + 1);
+  }
+
+  function advanceFrame() {
+    goToFrame(Math.min(frame + 1, Math.max(frames.length - 1, 0)));
   }
 
   function submitGuess(value = guess) {
@@ -131,6 +140,31 @@ export function GameClient({ game, dramas }: Props) {
     if (attempts.length < unlockAfter) return;
     if (usedClues.includes(clueId)) return;
     setUsedClues((prev) => [...prev, clueId]);
+  }
+
+  async function inviteFriend() {
+    const shareUrl = `${window.location.origin}/challenge/${game.id.slice(0, 8)}`;
+    const text = t("inviteText").replace("{url}", shareUrl);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t("brandName"),
+          text,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setInviteNotice(t("challengeCopied"));
+    } catch {
+      setInviteNotice(t("shareFailed"));
+    }
   }
 
   async function shareResult() {
@@ -210,28 +244,58 @@ export function GameClient({ game, dramas }: Props) {
               {t("sceneLabel")} {String(frame + 1).padStart(2, "0")}
             </span>
             <span>
-              {attempts.length}
-              {t("attemptsOf")}
+              {attempts.length} / 5
             </span>
           </div>
         </div>
 
-        <div className="frame-dots" aria-hidden>
-          {(frames.length ? frames : [null, null, null, null, null]).map(
-            (_, index) => (
-              <span
-                key={index}
-                className={index <= frame ? "dot active" : "dot"}
-              />
-            ),
-          )}
+        <div className="frame-nav-controls">
+          <button
+            type="button"
+            className="frame-nav-btn"
+            onClick={() => goToFrame(frame - 1)}
+            disabled={frame <= 0}
+            aria-label={t("prevFrame")}
+          >
+            <IconChevronLeft size={16} /> {t("prevFrame")}
+          </button>
+
+          <div className="frame-dots" aria-hidden>
+            {(frames.length ? frames : [null, null, null, null, null]).map(
+              (_, index) => (
+                <span
+                  key={index}
+                  className={index <= frame ? "dot active" : "dot"}
+                  onClick={() => goToFrame(index)}
+                />
+              ),
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="frame-nav-btn"
+            onClick={() => goToFrame(frame + 1)}
+            disabled={frame >= unlockedFrame}
+            aria-label={t("nextFrame")}
+          >
+            {t("nextFrame")} <IconChevronRight size={16} />
+          </button>
         </div>
       </div>
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">{t("yourGuess")}</span>
+          <div className="guess-heading-top">
+            <span className="eyebrow">{t("yourGuess")}</span>
+            <button type="button" className="scene-share-btn" onClick={() => void inviteFriend()}>
+              <IconShare size={14} /> {t("shareGame")}
+            </button>
+          </div>
           <h2>{t("whatDrama")}</h2>
+          {inviteNotice && (
+            <p className="game-notice" style={{ marginTop: 6 }}>{inviteNotice}</p>
+          )}
         </div>
 
         <div className={`search-wrap ${shake ? "search-shake" : ""}`}>
@@ -294,7 +358,10 @@ export function GameClient({ game, dramas }: Props) {
                 disabled={!unlocked || used}
                 onClick={() => useClue(clue.id, clue.unlockAfterAttempt)}
               >
-                <span>{localizeClueLabel(clue.label, locale)}</span>
+                <div className="clue-header">
+                  <span>{localizeClueLabel(clue.label, locale)}</span>
+                  {used ? <IconUnlock size={14} /> : <IconLock size={14} />}
+                </div>
                 <strong>
                   {used ? clue.value : unlocked ? t("reveal") : t("locked")}
                 </strong>
@@ -305,6 +372,7 @@ export function GameClient({ game, dramas }: Props) {
 
         {streak > 0 && (
           <div className="streak-chip">
+            <IconFlame size={15} style={{ color: "#DC2626" }} />
             <strong>{streak}</strong>
             <span>{t("streak")}</span>
           </div>

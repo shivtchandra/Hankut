@@ -4,10 +4,10 @@ import { useState } from "react";
 
 export function ContentHealthDashboard() {
   const [issues, setIssues] = useState([
-    { id: "1", type: "missing_frames", severity: "high", entity: "폭싹 속았수다 #scene-002", description: "프레임이 3개만 등록됨 (5개 필요)" },
-    { id: "2", type: "missing_clues", severity: "medium", entity: "태연 - 그대라는 시 #song-001", description: "힌트가 1개만 구성됨" },
-    { id: "3", type: "rights_review", severity: "high", entity: "나의 해방일지 #scene-004", description: "저작권 검토 필요 (Review Required)" },
-    { id: "4", type: "missing_alias", severity: "low", entity: "우리들의 블루스 #chosung-003", description: "영문 별칭 미설정" },
+    { id: "1", type: "missing_frames", severity: "high", entity: "When Life Gives You Tangerines #scene-002", description: "Only 3 of 5 frames uploaded" },
+    { id: "2", type: "missing_clues", severity: "medium", entity: "Taeyeon - That's The Way #song-001", description: "Only 1 hint configured" },
+    { id: "3", type: "rights_review", severity: "high", entity: "My Liberation Notes #scene-004", description: "Rights review required" },
+    { id: "4", type: "missing_alias", severity: "low", entity: "Our Blues #chosung-003", description: "English alias missing" },
   ]);
 
   const healthScore = Math.max(0, 100 - issues.length * 8);
@@ -21,25 +21,25 @@ export function ContentHealthDashboard() {
       <div className="admin-title">
         <div>
           <span className="eyebrow">QUALITY ASSURANCE</span>
-          <h1>콘텐츠 헬스 체크 & 저작권 검토</h1>
+          <h1>Content Health &amp; Rights Review</h1>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "24px", marginTop: "20px" }}>
         <div className="health-score-card" style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e7e5e4", textAlign: "center" }}>
-          <span style={{ fontSize: "14px", color: "#666" }}>건강도 지수 (CONTENT HEALTH)</span>
+          <span style={{ fontSize: "14px", color: "#666" }}>CONTENT HEALTH SCORE</span>
           <div style={{ fontSize: "56px", fontWeight: "bold", color: healthScore >= 80 ? "#059669" : "#dc2626", margin: "12px 0" }}>
             {healthScore} <span style={{ fontSize: "20px", color: "#999" }}>/ 100</span>
           </div>
           <p style={{ fontSize: "13px", color: "#666" }}>
-            {healthScore >= 80 ? "퍼즐 및 엔티티가 양호한 상태입니다." : "개선이 필요한 이슈가 존재합니다."}
+            {healthScore >= 80 ? "All puzzles and entities are in good shape." : "Issues detected — review below."}
           </p>
         </div>
 
         <div className="issues-list-card" style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e7e5e4" }}>
-          <h3>감지된 이슈 ({issues.length}건)</h3>
+          <h3>Detected Issues ({issues.length})</h3>
           {issues.length === 0 ? (
-            <p style={{ color: "#059669", fontWeight: "bold" }}>🎉 감지된 문제점이 없습니다. 모든 콘텐츠가 정상입니다!</p>
+            <p style={{ color: "#059669", fontWeight: "bold" }}>🎉 No issues detected — all content looks good!</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
               {issues.map((issue) => (
@@ -71,7 +71,7 @@ export function ContentHealthDashboard() {
                       cursor: "pointer",
                     }}
                   >
-                    해결 조치
+                    Resolve
                   </button>
                 </div>
               ))}
