@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { IconChevronRight, IconFlame, IconLock, IconScene, IconUnlock } from "@/components/icons/Icons";
 
 export function LandingGuideSection() {
   const [open, setOpen] = useState(false);
@@ -22,29 +20,19 @@ export function LandingGuideSection() {
       </div>
 
       {open && (
-        <div className="landing-guide-cards">
+        <div className="landing-guide-cards two-cards">
           <div className="guide-card">
             <div className="guide-card-num">01</div>
             <div className="guide-card-content">
               <h4>Watch the Cut · 장면 감상</h4>
               <p>
-                Start with 1 cinematic frame. Each incorrect guess unlocks the next frame (up to 5 frames).
+                Start with 1 cinematic frame. Each incorrect guess reveals the next frame (up to 5 frames).
               </p>
             </div>
           </div>
 
           <div className="guide-card">
             <div className="guide-card-num">02</div>
-            <div className="guide-card-content">
-              <h4>Unlock Hints · 힌트 활용</h4>
-              <p>
-                Stuck? Reveal actor names, air year, OST songs, and quotes after each attempt.
-              </p>
-            </div>
-          </div>
-
-          <div className="guide-card">
-            <div className="guide-card-num">03</div>
             <div className="guide-card-content">
               <h4>Score & Streak · 연속 정답</h4>
               <p>
@@ -55,64 +43,5 @@ export function LandingGuideSection() {
         </div>
       )}
     </div>
-  );
-}
-
-export function ArchiveTeaserSection() {
-  const recentCuts = [
-    {
-      date: "2026.09.15",
-      titleEn: "My Liberation Notes",
-      titleKr: "나의 해방일지",
-      cutNum: "#247",
-      solvedPct: "78%",
-    },
-    {
-      date: "2026.09.14",
-      titleEn: "Our Blues",
-      titleKr: "우리들의 블루스",
-      cutNum: "#246",
-      solvedPct: "82%",
-    },
-    {
-      date: "2026.09.13",
-      titleEn: "Moving",
-      titleKr: "무빙",
-      cutNum: "#245",
-      solvedPct: "65%",
-    },
-  ];
-
-  return (
-    <section className="archive-teaser-wrapper">
-      <div className="section-title-row">
-        <div>
-          <span className="eyebrow">PAST PUZZLES · 지나간 퍼즐</span>
-          <h2>Play Recent Cuts · 최근 장면 다시보기</h2>
-        </div>
-        <Link href="/archive" className="view-all-link">
-          View All Archive <IconChevronRight size={14} />
-        </Link>
-      </div>
-
-      <div className="recent-cuts-grid">
-        {recentCuts.map((cut) => (
-          <div key={cut.cutNum} className="recent-cut-card">
-            <div className="recent-cut-meta">
-              <span className="cut-badge">{cut.cutNum}</span>
-              <span className="cut-date">{cut.date}</span>
-            </div>
-            <h4 className="cut-title-en">{cut.titleEn}</h4>
-            <p className="cut-title-kr">{cut.titleKr}</p>
-            <div className="recent-cut-footer">
-              <span className="solved-rate">Success: {cut.solvedPct}</span>
-              <Link href={`/?date=${cut.date}`} className="play-cut-btn">
-                Play Cut →
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }

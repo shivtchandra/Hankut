@@ -6,7 +6,7 @@ import { TodaysFiveView } from "@/components/game/TodaysFiveView";
 import { SideContentPanel } from "@/components/game/SideContentPanel";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { LandingGuideSection, ArchiveTeaserSection } from "@/components/landing/LandingSections";
+import { LandingGuideSection } from "@/components/landing/LandingSections";
 
 import type { Drama, TodayGame, TodaysFiveGame } from "@/types/game";
 
@@ -56,7 +56,7 @@ export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props)
                 This scene—<br />where&apos;s it from?
               </h1>
               <p className="game-headline-sub">
-                One cinematic cut. Guess the K-drama in 5 attempts with daily clues.
+                One cinematic cut. Guess the K-drama in 5 attempts.
                 <span className="sub-kr"> · 한 컷만 보고 드라마를 맞혀보세요.</span>
               </p>
             </>
@@ -82,9 +82,6 @@ export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props)
 
           <SideContentPanel dramas={dramas} />
         </div>
-
-        {/* Archive Teaser Section below game */}
-        <ArchiveTeaserSection />
       </section>
 
       <SiteFooter />
