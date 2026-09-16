@@ -1,88 +1,184 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { GameClient } from "@/components/game/GameClient";
-import { TodaysFiveView } from "@/components/game/TodaysFiveView";
-import { SideContentPanel } from "@/components/game/SideContentPanel";
+import { HowItWorksModal } from "@/components/game/HowItWorksModal";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { LandingGuideSection } from "@/components/landing/LandingSections";
+import { IconChevronLeft, IconChevronRight, IconInfo } from "@/components/icons/Icons";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
-import type { Drama, TodayGame, TodaysFiveGame } from "@/types/game";
+import type { Drama, TodayGame } from "@/types/game";
 
 type Props = {
   game: TodayGame;
   dramas: Drama[];
   source: "supabase" | "demo";
   dateLabel: string;
-  todaysFive?: TodaysFiveGame;
 };
 
-export function GamePage({ game, dramas, source, dateLabel, todaysFive }: Props) {
-  const [activeTab, setActiveTab] = useState<"scene" | "todaysFive">("scene");
+export function GamePage({ game, dramas, dateLabel }: Props) {
+  const { locale, t } = useLocale();
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  const currentDate = useMemo(
+    () => new Date(`${game.gameDate}T12:00:00+09:00`),
+    [game.gameDate]
+  );
+
+  const prevDate = useMemo(() => {
+    const prev = new Date(currentDate);
+    prev.setDate(prev.getDate() - 1);
+    return prev.toISOString().split("T")[0];
+  }, [currentDate]);
+
+  const nextDate = useMemo(() => {
+    const next = new Date(currentDate);
+    next.setDate(next.getDate() + 1);
+    return next.toISOString().split("T")[0];
+  }, [currentDate]);
+
+  const todayStr = useMemo(
+    () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }),
+    []
+  );
+  const isToday = game.gameDate >= todayStr;
+
+  const formattedDate = useMemo(() => {
+    try {
+      if (locale === "ko") {
+        return new Intl.DateTimeFormat("ko-KR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "short",
+          timeZone: "Asia/Seoul",
+        }).format(currentDate);
+      }
+      return new Intl.DateTimeFormat("en-GB", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Seoul",
+      }).format(currentDate).toUpperCase();
+    } catch {
+      return dateLabel || game.gameDate;
+    }
+  }, [currentDate, locale, dateLabel, game.gameDate]);
+
+  const featuredDramas = useMemo(() => dramas.slice(0, 4), [dramas]);
 
   return (
     <main className="game-page">
       <SiteNav />
 
       <section className="play-stage">
-        {/* Landing Hero Section */}
-        <div className="game-intro">
-          <div className="daily-meta-line">
-            <span className="daily-edition-badge">DAILY EDITION #248</span>
-            <span className="daily-date">{dateLabel}</span>
-            <div className="mode-switch">
-              <button
-                type="button"
-                className={`mode-switch-btn ${activeTab === "scene" ? "active" : ""}`}
-                onClick={() => setActiveTab("scene")}
+        <div className="game-stage-container">
+          {/* Concise, Clean Game Header */}
+          <div className="daily-game-header">
+            <div className="daily-title-block">
+              <div className="daily-title-row">
+                <h1 className="daily-game-title">{t("dailyGameTitle")}</h1>
+                <button
+                  type="button"
+                  className="how-it-works-btn"
+                  onClick={() => setShowHowItWorks(true)}
+                  title={t("howItWorksBtn")}
+                  aria-label={t("howItWorksBtn")}
+                >
+                  <IconInfo size={14} />
+                  <span>{t("howItWorksBtn")}</span>
+                </button>
+              </div>
+              <p className="daily-game-subtitle">{t("dailyGameSubtitle")}</p>
+            </div>
+
+            {/* Simple, Elegant Date Changer */}
+            <div className="date-nav-group">
+              <Link
+                href={`/?date=${prevDate}`}
+                className="date-arrow-btn"
+                title={t("prevDay")}
+                aria-label={t("prevDay")}
               >
-                Today&apos;s Scene
-              </button>
-              <span className="mode-switch-sep">·</span>
-              <button
-                type="button"
-                className={`mode-switch-btn ${activeTab === "todaysFive" ? "active" : ""}`}
-                onClick={() => setActiveTab("todaysFive")}
-              >
-                Today&apos;s 5
-              </button>
+                <IconChevronLeft size={16} />
+              </Link>
+
+              <div className="date-display">
+                <span className="date-text">{formattedDate}</span>
+                {isToday ? (
+                  <span className="date-tag-today">TODAY</span>
+                ) : (
+                  <Link href="/" className="date-tag-back" title={t("returnToday")}>
+                    {t("returnToday")}
+                  </Link>
+                )}
+              </div>
+
+              {isToday ? (
+                <span className="date-arrow-btn disabled" aria-disabled="true">
+                  <IconChevronRight size={16} />
+                </span>
+              ) : (
+                <Link
+                  href={`/?date=${nextDate}`}
+                  className="date-arrow-btn"
+                  title={t("nextDay")}
+                  aria-label={t("nextDay")}
+                >
+                  <IconChevronRight size={16} />
+                </Link>
+              )}
             </div>
           </div>
 
-          {activeTab === "scene" && (
-            <>
-              <h1 className="game-headline-kr">
-                This scene—<br />where&apos;s it from?
-              </h1>
-              <p className="game-headline-sub">
-                One cinematic cut. Guess the K-drama in 5 attempts.
-                <span className="sub-kr"> · 한 컷만 보고 드라마를 맞혀보세요.</span>
-              </p>
-            </>
-          )}
-
-          <LandingGuideSection />
+          {/* Main Focused Game View */}
+          <GameClient game={game} dramas={dramas} />
         </div>
 
-        {/* Main Game Stage + Desktop Sidebar */}
-        <div className="wide-desktop-layout">
-          <div className="main-game-column">
-            {activeTab === "scene" ? (
-              <GameClient game={game} dramas={dramas} />
-            ) : (
-              (todaysFive ?? game.todaysFive) && (
-                <TodaysFiveView
-                  todaysFive={(todaysFive ?? game.todaysFive)!}
-                  dramas={dramas}
-                />
-              )
-            )}
+        {/* Discovery Strip Below Game Fold */}
+        <div className="discovery-strip-wrapper">
+          <div className="discovery-header">
+            <div>
+              <h2 className="discovery-title">{t("exploreTitle")}</h2>
+              <p className="discovery-subtitle">{t("exploreSub")}</p>
+            </div>
+            <Link href="/dramas" className="discovery-browse-link">
+              {locale === "ko" ? "전체 보기" : "Browse all"} <IconChevronRight size={14} />
+            </Link>
           </div>
 
-          <SideContentPanel dramas={dramas} />
+          <div className="discovery-cards-grid">
+            {featuredDramas.map((drama) => {
+              const primary = locale === "ko" ? drama.titleKr : drama.titleEn;
+              const secondary = locale === "ko" ? drama.titleEn : drama.titleKr;
+              return (
+                <Link
+                  key={drama.id}
+                  href={`/dramas/${drama.id}`}
+                  className="discovery-card"
+                >
+                  <div className="discovery-card-top">
+                    <span className="discovery-year">{drama.year}</span>
+                    {drama.genres?.[0] && (
+                      <span className="discovery-genre">{drama.genres[0]}</span>
+                    )}
+                  </div>
+                  <strong className="discovery-primary">{primary}</strong>
+                  <span className="discovery-secondary">{secondary}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
+
+      <HowItWorksModal
+        isOpen={showHowItWorks}
+        onClose={() => setShowHowItWorks(false)}
+      />
 
       <SiteFooter />
     </main>

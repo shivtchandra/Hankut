@@ -78,18 +78,19 @@ function mapRow(row: {
   };
 }
 
-export async function getTodayGame(): Promise<{
+export async function getTodayGame(targetDate?: string): Promise<{
   game: TodayGame;
   source: "supabase" | "demo";
   dramas: TodayGame["scene"]["drama"][];
 }> {
+  const gameDate = targetDate || seoulDate();
   const configured =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!configured) {
     return {
-      game: DEMO_TODAY_GAME,
+      game: { ...DEMO_TODAY_GAME, gameDate },
       source: "demo",
       dramas: DEMO_DRAMAS,
     };
@@ -97,7 +98,6 @@ export async function getTodayGame(): Promise<{
 
   try {
     const supabase = await createSupabaseServer();
-    const today = seoulDate();
 
     const { data, error } = await supabase
       .from("daily_games")
@@ -133,13 +133,13 @@ export async function getTodayGame(): Promise<{
         )
       `,
       )
-      .eq("game_date", today)
+      .eq("game_date", gameDate)
       .in("status", ["published", "scheduled"])
       .maybeSingle();
 
     if (error || !data || !one((data as { scene: unknown }).scene)) {
       return {
-        game: DEMO_TODAY_GAME,
+        game: { ...DEMO_TODAY_GAME, gameDate },
         source: "demo",
         dramas: DEMO_DRAMAS,
       };
@@ -349,7 +349,7 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
   return null;
 }
 
-export async function getTodaysFive(): Promise<TodaysFiveGame | null> {
+export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame | null> {
   const configured =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -358,12 +358,12 @@ export async function getTodaysFive(): Promise<TodaysFiveGame | null> {
 
   try {
     const supabase = await createSupabaseServer();
-    const today = seoulDate();
+    const gameDate = targetDate || seoulDate();
 
     const { data: setRow } = await supabase
       .from("daily_sets")
       .select("id, game_date")
-      .eq("game_date", today)
+      .eq("game_date", gameDate)
       .eq("status", "published")
       .maybeSingle();
 

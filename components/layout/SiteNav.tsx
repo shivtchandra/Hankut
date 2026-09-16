@@ -7,7 +7,7 @@ import { IconCalendar, IconScene, IconSearch } from "@/components/icons/Icons";
 
 export function SiteNav() {
   const path = usePathname();
-  const { locale } = useLocale();
+  const { locale, setLocale } = useLocale();
 
   const navItems = [
     { href: "/", label: locale === "ko" ? "오늘의 게임" : "Today", icon: IconScene },
@@ -27,17 +27,38 @@ export function SiteNav() {
             </span>
           </Link>
 
-          <nav className="topnav">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={path === item.href ? "active" : ""}
+          <div className="topbar-right">
+            <nav className="topnav">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={path === item.href ? "active" : ""}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="lang-toggle" role="group" aria-label="Language selector">
+              <button
+                type="button"
+                className={locale === "ko" ? "active" : ""}
+                onClick={() => setLocale("ko")}
+                aria-pressed={locale === "ko"}
               >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+                KO
+              </button>
+              <button
+                type="button"
+                className={locale === "en" ? "active" : ""}
+                onClick={() => setLocale("en")}
+                aria-pressed={locale === "en"}
+              >
+                EN
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 

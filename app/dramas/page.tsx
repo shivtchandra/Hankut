@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -10,6 +13,7 @@ const DRAMAS = [
     year: 2025,
     network: "Netflix",
     genresEn: ["Drama", "Romance", "Family"],
+    genresKr: ["드라마", "로맨스", "가족"],
     emoji: "🍊",
     puzzleCount: 3,
     descriptionKr: "제주를 배경으로 한 70년 이야기. 아이유, 박보검 주연.",
@@ -22,6 +26,7 @@ const DRAMAS = [
     year: 2022,
     network: "JTBC",
     genresEn: ["Drama", "Slice of Life"],
+    genresKr: ["드라마", "일상"],
     emoji: "🌾",
     puzzleCount: 5,
     descriptionKr: "경기도 산포에서 서울로 출퇴근하는 세 남매의 일상과 해방.",
@@ -34,6 +39,7 @@ const DRAMAS = [
     year: 2022,
     network: "tvN",
     genresEn: ["Drama", "Human"],
+    genresKr: ["드라마", "휴먼"],
     emoji: "🌊",
     puzzleCount: 4,
     descriptionKr: "제주 바다를 배경으로 한 열여섯 명의 옴니버스 이야기.",
@@ -46,6 +52,7 @@ const DRAMAS = [
     year: 2023,
     network: "Disney+",
     genresEn: ["Action", "Fantasy", "Drama"],
+    genresKr: ["액션", "판타지", "드라마"],
     emoji: "⚡",
     puzzleCount: 6,
     descriptionKr: "초능력을 가진 아이들과 그들의 부모 세대의 판타지 액션.",
@@ -58,6 +65,7 @@ const DRAMAS = [
     year: 2019,
     network: "tvN",
     genresEn: ["Fantasy", "Romance"],
+    genresKr: ["판타지", "로맨스"],
     emoji: "🌙",
     puzzleCount: 7,
     descriptionKr: "떠돌이 영혼들을 치료하는 신비로운 호텔 사장의 이야기.",
@@ -70,6 +78,7 @@ const DRAMAS = [
     year: 2019,
     network: "tvN",
     genresEn: ["Romance", "Drama"],
+    genresKr: ["로맨스", "드라마"],
     emoji: "🪂",
     puzzleCount: 8,
     descriptionKr: "북한에 불시착한 재벌 상속녀와 북한 장교의 로맨스.",
@@ -82,6 +91,7 @@ const DRAMAS = [
     year: 2022,
     network: "ENA",
     genresEn: ["Legal", "Drama"],
+    genresKr: ["법정", "드라마"],
     emoji: "🐋",
     puzzleCount: 5,
     descriptionKr: "자폐 스펙트럼 장애를 가진 천재 신입 변호사의 성장기.",
@@ -94,9 +104,10 @@ const DRAMAS = [
     year: 2016,
     network: "tvN",
     genresEn: ["Fantasy", "Romance"],
+    genresKr: ["판타지", "로맨스"],
     emoji: "🕯️",
     puzzleCount: 9,
-    descriptionKr: "불멸의 삶을 끝내려는 도깨비와 그 신부의 운명적 소설.",
+    descriptionKr: "불멸의 삶을 끝내려는 도깨비와 그 신부의 운명적 이야기.",
     descriptionEn: "An immortal goblin searches for his human bride to end his curse.",
   },
   {
@@ -106,6 +117,7 @@ const DRAMAS = [
     year: 2015,
     network: "tvN",
     genresEn: ["Drama", "Comedy"],
+    genresKr: ["드라마", "코미디"],
     emoji: "📻",
     puzzleCount: 6,
     descriptionKr: "1988년 쌍문동 골목 다섯 가족과 친구들의 따뜻한 청춘.",
@@ -118,6 +130,7 @@ const DRAMAS = [
     year: 2022,
     network: "tvN",
     genresEn: ["Fantasy", "Martial Arts"],
+    genresKr: ["판타지", "무협"],
     emoji: "🌀",
     puzzleCount: 4,
     descriptionKr: "영혼이 뒤바뀐 두 남녀의 이야기를 그린 판타지 무협.",
@@ -126,51 +139,58 @@ const DRAMAS = [
 ];
 
 export default function DramasDirectoryPage() {
+  const { locale, t } = useLocale();
+
   return (
     <main className="dramas-directory-page">
       <SiteNav />
 
       <section className="directory-content">
         <div className="directory-header">
-          <span className="eyebrow">엔티티 아카이브 · Entity Archive</span>
-          <h1>드라마 디렉토리 <span style={{ fontSize: "24px", color: "var(--muted)", fontWeight: 400 }}>· Drama Directory</span></h1>
-          <p className="dir-sub">
-            퀴즈에 등장한 주요 K-드라마 명작들의 장면, 출연진, OST 및 연관 콘텐츠를 확인하세요.
-            <br />
-            <span style={{ fontSize: "13px", fontFamily: "var(--font-mono, 'DM Mono', monospace)", color: "var(--muted)" }}>
-              Explore K-dramas featured in daily puzzles — scenes, cast, OSTs, and more.
-            </span>
-          </p>
+          <span className="eyebrow">{locale === "ko" ? "엔티티 아카이브" : "Entity Archive"}</span>
+          <h1>{t("dramasTitle")}</h1>
+          <p className="dir-sub">{t("dramasSubtitle")}</p>
         </div>
 
         <div className="dramas-grid">
-          {DRAMAS.map((drama) => (
-            <Link key={drama.id} href={`/dramas/${drama.id}`} className="drama-entity-card">
-              <div className="drama-poster">
-                <span className="drama-poster-placeholder">{drama.emoji}</span>
-                <div className="drama-poster-overlay" />
-                <span className="drama-poster-badge">
-                  {drama.puzzleCount} Puzzles ({drama.puzzleCount} 퍼즐) · {drama.network}
-                </span>
-              </div>
-              <div className="drama-card-body">
-                <span className="drama-year">{drama.year} · {drama.network}</span>
-                <h2>{drama.titleKr}</h2>
-                <p style={{ fontWeight: 600, fontSize: "15px", color: "var(--ink)", marginBottom: "6px" }}>{drama.titleEn}</p>
-                <p style={{ fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-                  {drama.descriptionKr}
-                </p>
-                <p style={{ fontSize: "11px", color: "var(--muted)", opacity: 0.8, marginBottom: "12px", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>
-                  {drama.descriptionEn}
-                </p>
-                <div className="genres-list">
-                  {drama.genresEn.map((g) => (
-                    <span key={g} className="genre-pill">{g}</span>
-                  ))}
+          {DRAMAS.map((drama) => {
+            const primaryTitle = locale === "en" ? drama.titleEn : drama.titleKr;
+            const secondaryTitle = locale === "en" ? drama.titleKr : drama.titleEn;
+            const desc = locale === "en" ? drama.descriptionEn : drama.descriptionKr;
+            const genres = locale === "en" ? drama.genresEn : drama.genresKr;
+            const badgeCountText = `${drama.puzzleCount} ${t("puzzlesCount")}`;
+
+            return (
+              <Link key={drama.id} href={`/dramas/${drama.id}`} className="drama-entity-card">
+                <div className="drama-poster">
+                  <span className="drama-poster-placeholder">{drama.emoji}</span>
+                  <div className="drama-poster-overlay" />
+                  <span className="drama-poster-badge">
+                    {badgeCountText} · {drama.network}
+                  </span>
                 </div>
-              </div>
-            </Link>
-          ))}
+                <div className="drama-card-body">
+                  <span className="drama-year">
+                    {drama.year} · {drama.network}
+                  </span>
+                  <h2>{primaryTitle}</h2>
+                  <p style={{ fontSize: "13px", color: "var(--muted)", marginTop: "-4px", marginBottom: "8px" }}>
+                    {secondaryTitle}
+                  </p>
+                  <p style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.45, marginBottom: "12px" }}>
+                    {desc}
+                  </p>
+                  <div className="genres-list">
+                    {genres.map((g) => (
+                      <span key={g} className="genre-pill">
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 

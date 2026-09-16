@@ -1,13 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { GamePage } from "@/components/game/GamePage";
-import { getTodayGame, getTodaysFive } from "@/lib/game/today";
+import { getTodayGame } from "@/lib/game/today";
 
-export default async function Home() {
-  const [{ game, dramas, source }, todaysFive] = await Promise.all([
-    getTodayGame(),
-    getTodaysFive(),
-  ]);
+type Props = {
+  searchParams: Promise<{ date?: string }>;
+};
+
+export default async function Home({ searchParams }: Props) {
+  const { date } = (await searchParams) || {};
+  const { game, dramas, source } = await getTodayGame(date);
 
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
@@ -25,7 +27,6 @@ export default async function Home() {
       dramas={dramas}
       source={source}
       dateLabel={dateLabel}
-      todaysFive={todaysFive ?? undefined}
     />
   );
 }

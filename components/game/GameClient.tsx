@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import { localizeClueLabel } from "@/lib/i18n/dictionary";
 import { matchesAlias, normalize } from "@/lib/game/normalization";
 import {
   buildShareText,
   getStreak,
   recordDailyPlay,
 } from "@/lib/game/streak";
-import { IconChevronLeft, IconChevronRight, IconLock, IconShare, IconUnlock, IconFlame } from "@/components/icons/Icons";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconShare,
+  IconFlame,
+  IconSearch,
+} from "@/components/icons/Icons";
 import type { Drama, TodayGame } from "@/types/game";
 
 type Props = {
@@ -21,14 +25,12 @@ type Props = {
 export function GameClient({ game, dramas }: Props) {
   const { locale, t } = useLocale();
   const frames = game.scene.frames;
-  const clues = game.scene.clues;
   const answer = game.scene.drama;
 
   const [frame, setFrame] = useState(0);
   const [guess, setGuess] = useState("");
   const [attempts, setAttempts] = useState<string[]>([]);
   const [solved, setSolved] = useState(false);
-  const [usedClues, setUsedClues] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
   const [shake, setShake] = useState(false);
   const [frameKey, setFrameKey] = useState(0);
@@ -48,6 +50,11 @@ export function GameClient({ game, dramas }: Props) {
     if (solved) return Math.max(frames.length - 1, 0);
     return Math.min(attempts.length, Math.max(frames.length - 1, 0));
   }, [solved, attempts.length, frames.length]);
+
+  const scoreEarned = useMemo(() => {
+    if (!solved) return 0;
+    return Math.max(30 - attempts.length * 5, 5);
+  }, [solved, attempts.length]);
 
   const suggestions = useMemo(() => {
     if (!guess.trim()) return [];
@@ -136,10 +143,23 @@ export function GameClient({ game, dramas }: Props) {
     }
   }
 
-  function useClue(clueId: string, unlockAfter: number) {
-    if (attempts.length < unlockAfter) return;
-    if (usedClues.includes(clueId)) return;
-    setUsedClues((prev) => [...prev, clueId]);
+  function skipCut() {
+    if (solved || attempts.length >= 5) return;
+    const nextAttempt = attempts.length + 1;
+    const skipLabel = locale === "ko" ? "건너뜀" : "Skipped";
+
+    setAttempts((prev) => [...prev, skipLabel]);
+    setGuess("");
+    setSuggestIndex(-1);
+    setNotice("");
+
+    if (nextAttempt < 5) {
+      advanceFrame();
+    } else {
+      setFrame(Math.max(frames.length - 1, 0));
+      setFrameKey((k) => k + 1);
+      setNotice(t("seeAnswer"));
+    }
   }
 
   async function inviteFriend() {
@@ -159,7 +179,7 @@ export function GameClient({ game, dramas }: Props) {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setInviteNotice("Game link copied! Send it to your friends.");
+      setInviteNotice(t("shareGameCopied"));
     } catch {
       setInviteNotice(t("shareFailed"));
     }
@@ -183,19 +203,21 @@ export function GameClient({ game, dramas }: Props) {
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Escape") {
-      setGuess("");
-      setSuggestIndex(-1);
+    if (!suggestions.length) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitGuess();
+      }
       return;
     }
 
-    if (event.key === "ArrowDown" && suggestions.length) {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
-      setSuggestIndex((i) => (i + 1) % suggestions.length);
+      setSuggestIndex((i) => (i >= suggestions.length - 1 ? 0 : i + 1));
       return;
     }
 
-    if (event.key === "ArrowUp" && suggestions.length) {
+    if (event.key === "ArrowUp") {
       event.preventDefault();
       setSuggestIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
       return;
@@ -218,6 +240,7 @@ export function GameClient({ game, dramas }: Props) {
 
   return (
     <div className="game-shell">
+      {/* LEFT: Scene Cut Theater */}
       <div className="scene-wrap">
         <div className={`scene ${shake ? "scene-shake" : ""}`}>
           {showScene ? (
@@ -239,7 +262,7 @@ export function GameClient({ game, dramas }: Props) {
 
           <div className="scene-hud">
             <span>
-              {t("sceneLabel")} {String(frame + 1).padStart(2, "0")}
+              {t("sceneLabel")} {String(frame + 1).padStart(2, "0")} / 05
             </span>
             <span>
               {attempts.length} / 5
@@ -261,10 +284,15 @@ export function GameClient({ game, dramas }: Props) {
           <div className="frame-dots" aria-hidden>
             {(frames.length ? frames : [null, null, null, null, null]).map(
               (_, index) => (
-                <span
+                <button
                   key={index}
-                  className={index <= frame ? "dot active" : "dot"}
+                  type="button"
+                  className={`dot-btn ${index <= frame ? "active" : ""} ${
+                    index <= unlockedFrame ? "unlocked" : "locked"
+                  }`}
                   onClick={() => goToFrame(index)}
+                  disabled={index > unlockedFrame}
+                  aria-label={`Frame ${index + 1}`}
                 />
               ),
             )}
@@ -282,143 +310,212 @@ export function GameClient({ game, dramas }: Props) {
         </div>
       </div>
 
+      {/* RIGHT: Clean Interactive Gameplay Console */}
       <div className="guess-panel">
-        <div className="guess-heading">
-          <div className="guess-heading-top">
-            <span className="eyebrow">{t("yourGuess")}</span>
-            <button type="button" className="scene-share-btn" onClick={() => void inviteFriend()}>
-              <IconShare size={14} /> {t("shareGame")}
-            </button>
-          </div>
-          <h2>{t("whatDrama")}</h2>
-          {inviteNotice && (
-            <p className="game-notice" style={{ marginTop: 6 }}>{inviteNotice}</p>
-          )}
-        </div>
+        <div className="console-topbar">
+          <div className="console-header-row">
+            <span className="console-eyebrow">{t("yourGuess")}</span>
 
-        <div className={`search-wrap ${shake ? "search-shake" : ""}`}>
-          <input
-            ref={inputRef}
-            value={guess}
-            onChange={(event) => {
-              setGuess(event.target.value);
-              setSuggestIndex(-1);
-            }}
-            onKeyDown={onKeyDown}
-            placeholder={t("guessPlaceholder")}
-            autoComplete="off"
-            disabled={finished}
-          />
-
-          <button
-            type="button"
-            onClick={() => submitGuess()}
-            disabled={!guess.trim() || finished}
-          >
-            {t("guess")}
-          </button>
-
-          {suggestions.length > 0 && !finished && (
-            <div className="suggestions" role="listbox">
-              {suggestions.map((drama, index) => (
-                <button
-                  key={drama.id}
-                  type="button"
-                  role="option"
-                  aria-selected={index === suggestIndex}
-                  className={index === suggestIndex ? "active" : ""}
-                  onClick={() => {
-                    const title = primaryTitle(drama);
-                    setGuess(title);
-                    submitGuess(title);
-                  }}
-                >
-                  <strong>{primaryTitle(drama)}</strong>
-                  <span>{secondaryTitle(drama)}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {notice && <div className="game-notice">{notice}</div>}
-
-        <div className="clue-row">
-          {clues.map((clue) => {
-            const unlocked = attempts.length >= clue.unlockAfterAttempt;
-            const used = usedClues.includes(clue.id);
-
-            return (
-              <button
-                key={clue.id}
-                type="button"
-                className={`clue ${used ? "revealed" : ""} ${unlocked ? "unlocked" : ""}`}
-                disabled={!unlocked || used}
-                onClick={() => useClue(clue.id, clue.unlockAfterAttempt)}
-              >
-                <div className="clue-header">
-                  <span>{localizeClueLabel(clue.label, locale)}</span>
-                  {used ? <IconUnlock size={14} /> : <IconLock size={14} />}
+            <div className="console-meta-actions">
+              {streak > 0 && (
+                <div className="console-streak-chip">
+                  <IconFlame size={12} style={{ color: "#DC2626" }} />
+                  <span>{streak} {t("streak")}</span>
                 </div>
-                <strong>
-                  {used ? clue.value : unlocked ? t("reveal") : t("locked")}
-                </strong>
+              )}
+              <button
+                type="button"
+                className="scene-share-btn"
+                onClick={() => void inviteFriend()}
+                title={t("shareGame")}
+              >
+                <IconShare size={12} />
+                <span>{t("shareGame")}</span>
               </button>
-            );
-          })}
+            </div>
+          </div>
+
+          <h2 className="console-title">{t("whatDrama")}</h2>
         </div>
 
-        {streak > 0 && (
-          <div className="streak-chip">
-            <IconFlame size={15} style={{ color: "#DC2626" }} />
-            <strong>{streak}</strong>
-            <span>{t("streak")}</span>
-          </div>
+        {inviteNotice && (
+          <p className="game-notice success">{inviteNotice}</p>
         )}
 
-        {finished && (
-          <div className="result-card">
-            <span className="eyebrow">
-              {solved ? t("answerEyebrow") : t("answerReveal")}
-            </span>
-            <h3>{primaryTitle(answer)}</h3>
-            <p>{secondaryTitle(answer)}</p>
-
-            {solved && (
-              <div className="result-stat">
-                <strong>{attempts.length}</strong>
-                <span>{t("solvedIn")}</span>
-              </div>
-            )}
-
-            <div className="result-actions">
-              <a className="primary-action" href={`/challenge/${game.id.slice(0, 8)}`}>
-                {t("challengeFriend")}
-              </a>
+        {/* ACTIVE PLAY: Single Unified Search & Guess Box */}
+        {!finished ? (
+          <div className="unified-play-box">
+            {/* The Single Unified Search Input */}
+            <div className={`unified-input-wrap ${shake ? "search-shake" : ""}`}>
+              <IconSearch size={18} className="unified-search-icon" />
+              <input
+                ref={inputRef}
+                value={guess}
+                onChange={(event) => {
+                  setGuess(event.target.value);
+                  setSuggestIndex(-1);
+                }}
+                onKeyDown={onKeyDown}
+                placeholder={t("guessPlaceholder")}
+                autoComplete="off"
+                autoFocus
+              />
+              {guess && (
+                <button
+                  type="button"
+                  className="unified-clear-btn"
+                  onClick={() => {
+                    setGuess("");
+                    setSuggestIndex(-1);
+                    inputRef.current?.focus();
+                  }}
+                  aria-label="Clear input"
+                >
+                  ✕
+                </button>
+              )}
               <button
                 type="button"
-                className="secondary-action"
+                className="unified-submit-btn"
+                onClick={() => submitGuess()}
+                disabled={!guess.trim()}
+              >
+                {t("guess")}
+              </button>
+
+              {/* Autocomplete Dropdown */}
+              {suggestions.length > 0 && (
+                <div className="suggestions" role="listbox">
+                  {suggestions.map((drama, index) => (
+                    <button
+                      key={drama.id}
+                      type="button"
+                      role="option"
+                      aria-selected={index === suggestIndex}
+                      className={index === suggestIndex ? "active" : ""}
+                      onClick={() => {
+                        const title = primaryTitle(drama);
+                        setGuess(title);
+                        submitGuess(title);
+                      }}
+                    >
+                      <strong>{primaryTitle(drama)}</strong>
+                      <span>{secondaryTitle(drama)} · {drama.year}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Action Row: Skip Button + Visual Attempt Dots */}
+            <div className="unified-action-row">
+              <button
+                type="button"
+                className="unified-skip-btn"
+                onClick={skipCut}
+                disabled={attempts.length >= 5}
+              >
+                {t("skipCut")}
+              </button>
+
+              <div className="attempt-dots-track" aria-label={`Attempt ${attempts.length + 1} of 5`}>
+                {Array.from({ length: 5 }, (_, i) => {
+                  const att = attempts[i];
+                  const isCurrent = i === attempts.length;
+                  const isCorrect = att && solved && i === attempts.length - 1;
+                  const isSkipped = att === "Skipped" || att === "건너뜀";
+                  return (
+                    <span
+                      key={i}
+                      className={`attempt-dot ${
+                        att
+                          ? isCorrect
+                            ? "correct"
+                            : isSkipped
+                              ? "skipped"
+                              : "wrong"
+                          : isCurrent
+                            ? "current"
+                            : "empty"
+                      }`}
+                      title={att ? `${i + 1}: ${att}` : `Cut ${i + 1}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {notice && <div className="game-notice">{notice}</div>}
+
+            {/* Previous Attempts History (Only shown once user has made attempts) */}
+            {attempts.length > 0 && (
+              <div className="guess-history-list">
+                <span className="guess-history-label">
+                  {locale === "ko" ? "이전 시도 기록" : "Previous guesses"}
+                </span>
+                {attempts.map((item, index) => {
+                  const isSkipped = item === "Skipped" || item === "건너뜀";
+                  return (
+                    <div key={index} className={`guess-history-item ${isSkipped ? "skipped" : "wrong"}`}>
+                      <span className="history-num">{index + 1}</span>
+                      <span className="history-text">{item}</span>
+                      <span className="history-badge">{isSkipped ? "⏭️" : "❌"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Finished State: Elegant Result Card */
+          <div className="result-card-clean">
+            <div className="result-badge-row">
+              <span className={`result-status-tag ${solved ? "won" : "lost"}`}>
+                {solved ? t("answerEyebrow") : t("answerReveal")}
+              </span>
+              {solved && (
+                <span className="result-pts-tag">
+                  +{scoreEarned} {t("ptsEarned")}
+                </span>
+              )}
+            </div>
+
+            <div className="result-drama-titles">
+              <h3 className="result-primary-title">{primaryTitle(answer)}</h3>
+              <p className="result-secondary-title">
+                {secondaryTitle(answer)} · {answer.year}
+              </p>
+            </div>
+
+            {solved && (
+              <p className="result-summary-line">
+                🎯 {attempts.length} {t("solvedIn")}
+              </p>
+            )}
+
+            <div className="result-action-row">
+              <button
+                type="button"
+                className="result-share-btn"
                 onClick={() => void shareResult()}
               >
-                {t("shareResult")}
+                <IconShare size={15} /> {t("shareResult")}
               </button>
+              <a
+                className="result-challenge-link"
+                href={`/challenge/${game.id.slice(0, 8)}`}
+              >
+                {t("challengeFriend")}
+              </a>
             </div>
+
             {shareNotice && (
-              <p className="game-notice" style={{ color: "rgba(255,255,255,.65)" }}>
+              <p className="game-notice success" style={{ marginTop: 8 }}>
                 {shareNotice}
               </p>
             )}
           </div>
         )}
-
-        <div className="attempts">
-          {attempts.map((item, index) => (
-            <div className="attempt" key={`${item}-${index}`}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{item}</strong>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
