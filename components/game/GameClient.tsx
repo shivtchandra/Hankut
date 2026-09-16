@@ -144,13 +144,11 @@ export function GameClient({ game, dramas }: Props) {
 
   async function inviteFriend() {
     const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://dramacut.com";
-    const text = `${t("brandName")} — Can you guess today's K-drama cut?\n${shareUrl}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: t("brandName"),
-          text: `${t("brandName")} — Can you guess today's K-drama cut?`,
+          title: "Dramacut — Guess the K-drama from one cut",
           url: shareUrl,
         });
         return;
@@ -161,7 +159,7 @@ export function GameClient({ game, dramas }: Props) {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setInviteNotice("Game link copied! Send it to your friends to play.");
+      setInviteNotice("Game link copied! Send it to your friends.");
     } catch {
       setInviteNotice(t("shareFailed"));
     }

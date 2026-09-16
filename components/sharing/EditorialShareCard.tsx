@@ -17,13 +17,14 @@ type Props = {
 export function EditorialShareCard({ gameDate, deokryeokResult }: Props) {
   const [notice, setNotice] = useState("");
 
-  const formattedText = `[그 장면 뭐였지?] 오늘의 덕력 (${gameDate})
+    const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://dramacut.com";
+    const formattedText = `[그 장면 뭐였지?] 오늘의 덕력 (${gameDate})
 점수: ${deokryeokResult.totalScore} / ${deokryeokResult.maxScore} (${deokryeokResult.percentileText})
 연속 정답: ${deokryeokResult.streakDays}일 연속
 
 ${deokryeokResult.categoryBreakdown.map((c) => `${c.label}: ${'■'.repeat(Math.max(1, c.score))}`).join("\n")}
 
-👉 나도 도전하기: https://kdrama-scene-game.vercel.app`;
+👉 나도 도전하기: ${siteUrl}`;
 
   async function handleShare() {
     if (navigator.share) {

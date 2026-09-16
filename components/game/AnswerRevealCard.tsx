@@ -62,7 +62,8 @@ export function AnswerRevealCard({
 }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const shareText = `Dramacut — ${TYPE_LABELS[puzzleType] ?? "Scene"}\n${"✕ ".repeat(attemptsUsed).trim()}\nAnswer: ${titleEn ?? titleKr}\ndramacut.io`;
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://dramacut.com";
+  const shareText = `Dramacut — ${TYPE_LABELS[puzzleType] ?? "Scene"}\n${"✕ ".repeat(attemptsUsed).trim()}\nAnswer: ${titleEn ?? titleKr}\n${siteUrl}`;
 
   async function handleShare() {
     if (navigator.share) {
