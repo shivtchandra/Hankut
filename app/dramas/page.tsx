@@ -9,11 +9,11 @@ const DRAMAS = [
     titleEn: "When Life Gives You Tangerines",
     year: 2025,
     network: "Netflix",
-    genres: ["드라마", "로맨스", "가족"],
     genresEn: ["Drama", "Romance", "Family"],
     emoji: "🍊",
     puzzleCount: 3,
-    description: "제주를 배경으로 한 70년 이야기. 아이유, 박보검 주연.",
+    descriptionKr: "제주를 배경으로 한 70년 이야기. 아이유, 박보검 주연.",
+    descriptionEn: "A 70-year tale set in Jeju. Starring IU & Park Bo-gum.",
   },
   {
     id: "my-liberation-notes",
@@ -21,11 +21,11 @@ const DRAMAS = [
     titleEn: "My Liberation Notes",
     year: 2022,
     network: "JTBC",
-    genres: ["드라마", "일상"],
     genresEn: ["Drama", "Slice of Life"],
     emoji: "🌾",
     puzzleCount: 5,
-    description: "경기도 산포에서 서울로 출퇴근하는 세 남매의 일상과 해방을 향한 여정.",
+    descriptionKr: "경기도 산포에서 서울로 출퇴근하는 세 남매의 일상과 해방.",
+    descriptionEn: "Three siblings seek liberation from mundane daily commutes.",
   },
   {
     id: "our-blues",
@@ -33,11 +33,11 @@ const DRAMAS = [
     titleEn: "Our Blues",
     year: 2022,
     network: "tvN",
-    genres: ["드라마", "휴먼"],
     genresEn: ["Drama", "Human"],
     emoji: "🌊",
     puzzleCount: 4,
-    description: "제주 바다를 배경으로 한 열여섯 명의 이야기 — 이병헌, 신민아, 차승원.",
+    descriptionKr: "제주 바다를 배경으로 한 열여섯 명의 옴니버스 이야기.",
+    descriptionEn: "Omnibus stories of 16 sweet and bitter lives in Jeju.",
   },
   {
     id: "moving",
@@ -45,11 +45,11 @@ const DRAMAS = [
     titleEn: "Moving",
     year: 2023,
     network: "Disney+",
-    genres: ["액션", "판타지", "드라마"],
     genresEn: ["Action", "Fantasy", "Drama"],
     emoji: "⚡",
     puzzleCount: 6,
-    description: "초능력을 가진 아이들과 그들의 부모 세대의 이야기. 조인성, 한효주 주연.",
+    descriptionKr: "초능력을 가진 아이들과 그들의 부모 세대의 판타지 액션.",
+    descriptionEn: "Children with hidden superpowers & their protective parents.",
   },
   {
     id: "hotel-del-luna",
@@ -57,11 +57,11 @@ const DRAMAS = [
     titleEn: "Hotel del Luna",
     year: 2019,
     network: "tvN",
-    genres: ["판타지", "로맨스"],
     genresEn: ["Fantasy", "Romance"],
     emoji: "🌙",
     puzzleCount: 7,
-    description: "귀신들을 위한 호텔 사장 만월 — 아이유의 압도적 존재감.",
+    descriptionKr: "떠돌이 영혼들을 치료하는 신비로운 호텔 사장의 이야기.",
+    descriptionEn: "A mysterious hotel serving souls of the dead in Seoul.",
   },
   {
     id: "crash-landing",
@@ -69,11 +69,11 @@ const DRAMAS = [
     titleEn: "Crash Landing on You",
     year: 2019,
     network: "tvN",
-    genres: ["로맨스", "드라마"],
     genresEn: ["Romance", "Drama"],
     emoji: "🪂",
     puzzleCount: 8,
-    description: "북한에 불시착한 재벌 상속녀와 북한 장교의 로맨스.",
+    descriptionKr: "북한에 불시착한 재벌 상속녀와 북한 장교의 로맨스.",
+    descriptionEn: "A South Korean heiress accidentally paraglides into North Korea.",
   },
   {
     id: "extraordinary-attorney-woo",
@@ -81,11 +81,11 @@ const DRAMAS = [
     titleEn: "Extraordinary Attorney Woo",
     year: 2022,
     network: "ENA",
-    genres: ["법정", "드라마"],
     genresEn: ["Legal", "Drama"],
     emoji: "🐋",
     puzzleCount: 5,
-    description: "자폐 스펙트럼 장애를 가진 천재 신입 변호사 우영우의 성장기.",
+    descriptionKr: "자폐 스펙트럼 장애를 가진 천재 신입 변호사의 성장기.",
+    descriptionEn: "A brilliant attorney on the autism spectrum tackles legal cases.",
   },
   {
     id: "goblin",
@@ -93,11 +93,11 @@ const DRAMAS = [
     titleEn: "Guardian: The Lonely and Great God",
     year: 2016,
     network: "tvN",
-    genres: ["판타지", "로맨스"],
     genresEn: ["Fantasy", "Romance"],
     emoji: "🕯️",
     puzzleCount: 9,
-    description: "불멸의 삶을 사는 도깨비와 그의 신부를 찾는 운명적 이야기.",
+    descriptionKr: "불멸의 삶을 끝내려는 도깨비와 그 신부의 운명적 소설.",
+    descriptionEn: "An immortal goblin searches for his human bride to end his curse.",
   },
   {
     id: "reply-1988",
@@ -105,11 +105,11 @@ const DRAMAS = [
     titleEn: "Reply 1988",
     year: 2015,
     network: "tvN",
-    genres: ["드라마", "코미디"],
     genresEn: ["Drama", "Comedy"],
     emoji: "📻",
     puzzleCount: 6,
-    description: "1988년 쌍문동 골목의 다섯 가족과 청춘 이야기.",
+    descriptionKr: "1988년 쌍문동 골목 다섯 가족과 친구들의 따뜻한 청춘.",
+    descriptionEn: "Five childhood friends & their families living in 1988 Seoul.",
   },
   {
     id: "alchemy-of-souls",
@@ -117,11 +117,11 @@ const DRAMAS = [
     titleEn: "Alchemy of Souls",
     year: 2022,
     network: "tvN",
-    genres: ["판타지", "무협"],
     genresEn: ["Fantasy", "Martial Arts"],
     emoji: "🌀",
     puzzleCount: 4,
-    description: "영혼이 뒤바뀐 두 남녀의 이야기를 그린 무협 판타지.",
+    descriptionKr: "영혼이 뒤바뀐 두 남녀의 이야기를 그린 판타지 무협.",
+    descriptionEn: "A powerful sorceress trapped in a blind woman's body meets a noble master.",
   },
 ];
 
@@ -133,7 +133,7 @@ export default function DramasDirectoryPage() {
       <section className="directory-content">
         <div className="directory-header">
           <span className="eyebrow">엔티티 아카이브 · Entity Archive</span>
-          <h1>드라마 디렉토리</h1>
+          <h1>드라마 디렉토리 <span style={{ fontSize: "24px", color: "var(--muted)", fontWeight: 400 }}>· Drama Directory</span></h1>
           <p className="dir-sub">
             퀴즈에 등장한 주요 K-드라마 명작들의 장면, 출연진, OST 및 연관 콘텐츠를 확인하세요.
             <br />
@@ -150,15 +150,18 @@ export default function DramasDirectoryPage() {
                 <span className="drama-poster-placeholder">{drama.emoji}</span>
                 <div className="drama-poster-overlay" />
                 <span className="drama-poster-badge">
-                  {drama.puzzleCount} 퍼즐 · {drama.network}
+                  {drama.puzzleCount} Puzzles ({drama.puzzleCount} 퍼즐) · {drama.network}
                 </span>
               </div>
               <div className="drama-card-body">
                 <span className="drama-year">{drama.year} · {drama.network}</span>
                 <h2>{drama.titleKr}</h2>
-                <p>{drama.titleEn}</p>
-                <p style={{ fontSize: "12px", color: "var(--muted)", marginBottom: "14px", marginTop: "-8px" }}>
-                  {drama.description}
+                <p style={{ fontWeight: 600, fontSize: "15px", color: "var(--ink)", marginBottom: "6px" }}>{drama.titleEn}</p>
+                <p style={{ fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
+                  {drama.descriptionKr}
+                </p>
+                <p style={{ fontSize: "11px", color: "var(--muted)", opacity: 0.8, marginBottom: "12px", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>
+                  {drama.descriptionEn}
                 </p>
                 <div className="genres-list">
                   {drama.genresEn.map((g) => (

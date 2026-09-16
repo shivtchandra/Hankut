@@ -71,7 +71,7 @@ export default function DramaDetailPage({ params }: Props) {
       <header className="topbar">
         <a href="/dramas" className="brand">
           <span className="brand-mark">←</span>
-          <span className="brand-name">드라마 목록으로 돌아가기</span>
+          <span className="brand-name">Back to Dramas · 드라마 목록으로 돌아가기</span>
         </a>
       </header>
 
@@ -81,7 +81,9 @@ export default function DramaDetailPage({ params }: Props) {
             {drama.year} · {drama.network}
           </span>
           <h1>{drama.titleKr}</h1>
-          <p className="subtitle-en">{drama.titleEn}</p>
+          <p className="subtitle-en" style={{ fontSize: "20px", fontWeight: 600, color: "var(--ink)", marginBottom: "16px" }}>
+            {drama.titleEn}
+          </p>
 
           <div className="genres-list">
             {drama.genres.map((g) => (
@@ -92,42 +94,42 @@ export default function DramaDetailPage({ params }: Props) {
           </div>
 
           <div className="entity-relations-section">
-            <h3>연관 엔티티 그래프</h3>
+            <h3>Related Entity Graph · 연관 엔티티 그래프</h3>
             <ul className="relations-list">
               <li>
                 <IconPeople size={16} />
-                <span>주연 배우: 아이유 (이지은), 박보검</span>
+                <span>Cast / 출연진: IU (Lee Ji-eun), Park Bo-gum (아이유, 박보검)</span>
               </li>
               <li>
                 <IconPlace size={16} />
-                <span>대표 촬영지: 제주도 서귀포시</span>
+                <span>Filming Location / 촬영지: Jeju Island (제주도 서귀포시)</span>
               </li>
               <li>
                 <IconMusic size={16} />
-                <span>대표 OST: 태연 - 그대라는 시</span>
+                <span>Featured OST / 노래: Taeyeon - All About You (태연 - 그대라는 시)</span>
               </li>
               <li>
                 <IconConnections size={16} />
-                <span>연관 키워드: #제주배경 #슬라이스오브라이프 #넷플릭스원작</span>
+                <span>Keywords / 키워드: #Jeju #SliceOfLife #NetflixOriginal</span>
               </li>
             </ul>
           </div>
 
           <div className="related-puzzles-section">
-            <h3>관련 등장 퍼즐</h3>
+            <h3>Featured Puzzles · 관련 등장 퍼즐</h3>
             <div className="related-puzzles-grid">
               <div className="rel-puzzle-chip">
                 <IconScene size={16} />
                 <div>
-                  <span>장면 퍼즐</span>
-                  <strong>오늘의 장면 #247 (3회 명장면)</strong>
+                  <span>Scene Cut · 장면 퍼즐</span>
+                  <strong>Today&apos;s Cut #247 (Episode 3 Iconic Cut)</strong>
                 </div>
               </div>
               <div className="rel-puzzle-chip">
                 <IconHangul size={16} />
                 <div>
-                  <span>초성 퍼즐</span>
-                  <strong>초성 맞히기 #245 (ㅍㅆ ㅅㅇㅅㄷ)</strong>
+                  <span>Chosung · 초성 퍼즐</span>
+                  <strong>Chosung Guess #245 (ㅍㅆ ㅅㅇㅅㄷ)</strong>
                 </div>
               </div>
             </div>
@@ -135,7 +137,7 @@ export default function DramaDetailPage({ params }: Props) {
 
           <div className="action-row" style={{ marginTop: 28 }}>
             <Link href="/" className="primary-btn">
-              오늘의 게임에서 맞춰보기
+              Play Today&apos;s Game · 오늘의 게임에서 맞춰보기 →
             </Link>
           </div>
         </div>

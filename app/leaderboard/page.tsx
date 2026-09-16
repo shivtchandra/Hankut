@@ -7,35 +7,41 @@ export default function LeaderboardPage() {
   const [tab, setTab] = useState<"today" | "week" | "month" | "all">("today");
 
   const mockLeaderboard = [
-    { rank: 1, name: "제주감귤", score: 25, streak: 14, category: "전체 덕력 1위" },
-    { rank: 2, name: "구씨", score: 24, streak: 9, category: "장면 덕력 1위" },
-    { rank: 3, name: "호텔주인", score: 24, streak: 11, category: "OST 덕력 1위" },
-    { rank: 4, name: "봉석이", score: 23, streak: 5, category: "초성 덕력 1위" },
-    { rank: 5, name: "삼달리해녀", score: 22, streak: 7, category: "연결고리 1위" },
-    { rank: 6, name: "익명의덕후", score: 21, streak: 3, category: "인물 덕력" },
-    { rank: 7, name: "드라마폐인", score: 20, streak: 6, category: "장면 덕력" },
+    { rank: 1, name: "JejuTangerine (제주감귤)", score: 25, streak: 14, category: "Overall #1 · 전체 1위" },
+    { rank: 2, name: "GuMr (구씨)", score: 24, streak: 9, category: "Scene Master · 장면 1위" },
+    { rank: 3, name: "HotelOwner (호텔주인)", score: 24, streak: 11, category: "OST Master · 노래 1위" },
+    { rank: 4, name: "Bongseok (봉석이)", score: 23, streak: 5, category: "Chosung Master · 초성 1위" },
+    { rank: 5, name: "SamdalriDiver (삼달리해녀)", score: 22, streak: 7, category: "Connections · 연결고리 1위" },
+    { rank: 6, name: "AnonKDramaFan (익명)", score: 21, streak: 3, category: "People Trivia · 인물 분야" },
+    { rank: 7, name: "DramaFanatic (드라마폐인)", score: 20, streak: 6, category: "Scene Cut · 장면 분야" },
   ];
 
   return (
     <main className="leaderboard-page">
       <header className="topbar">
         <a href="/" className="brand">
-          <span className="brand-mark">순위</span>
-          <span className="brand-name">전국 덕력 순위표</span>
+          <span className="brand-mark">컷</span>
+          <span className="brand-name">Leaderboard · 덕력 순위표</span>
         </a>
         <nav className="topnav">
-          <a href="/">오늘의 게임</a>
-          <a href="/archive">지난 장면</a>
-          <a href="/leaderboard" className="active">덕력 순위</a>
-          <a href="/profile">나의 기록</a>
+          <a href="/">Today (오늘의 게임)</a>
+          <a href="/archive">Archive (지난 장면)</a>
+          <a href="/leaderboard" className="active">Leaderboard (덕력 순위)</a>
+          <a href="/profile">Profile (나의 기록)</a>
         </nav>
       </header>
 
       <section className="leaderboard-content">
         <div className="leaderboard-header-meta">
-          <span className="eyebrow">덕력 순위표</span>
-          <h1>대한민국 최고의 한국 문화 덕후들</h1>
-          <p>매일 시도 횟수, 힌트 미사용 여부, 빠른 해결 시간을 계산하여 산출된 공정한 순위입니다.</p>
+          <span className="eyebrow">LEADERBOARD · 덕력 순위표</span>
+          <h1>K-Culture Top Players <span style={{ fontSize: "24px", color: "var(--muted)", fontWeight: 400 }}>· 최고 덕후 순위</span></h1>
+          <p>
+            Rankings calculated daily based on speed, attempts, and zero-hint bonus points.
+            <br />
+            <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+              매일 시도 횟수, 힌트 미사용 여부, 빠른 해결 시간을 계산하여 산출된 공정한 순위입니다.
+            </span>
+          </p>
         </div>
 
         <div className="tab-bar">
@@ -44,28 +50,28 @@ export default function LeaderboardPage() {
             className={tab === "today" ? "active" : ""}
             onClick={() => setTab("today")}
           >
-            오늘의 덕력
+            Today (오늘)
           </button>
           <button
             type="button"
             className={tab === "week" ? "active" : ""}
             onClick={() => setTab("week")}
           >
-            이번 주 Top 10
+            This Week (이번 주)
           </button>
           <button
             type="button"
             className={tab === "month" ? "active" : ""}
             onClick={() => setTab("month")}
           >
-            이번 달 순위
+            This Month (이번 달)
           </button>
           <button
             type="button"
             className={tab === "all" ? "active" : ""}
             onClick={() => setTab("all")}
           >
-            명예의 전당 (All-Time)
+            All-Time (명예의 전당)
           </button>
         </div>
 
@@ -73,11 +79,11 @@ export default function LeaderboardPage() {
           <table className="lb-table">
             <thead>
               <tr>
-                <th>순위</th>
-                <th>플레이어</th>
-                <th>덕력 점수</th>
-                <th>연속 정답</th>
-                <th>주요 분야</th>
+                <th>Rank (순위)</th>
+                <th>Player (플레이어)</th>
+                <th>Score (점수)</th>
+                <th>Streak (연속)</th>
+                <th>Specialty (주요 분야)</th>
               </tr>
             </thead>
             <tbody>
@@ -87,21 +93,21 @@ export default function LeaderboardPage() {
                     {item.rank <= 3 ? (
                       <span className={`rank-badge rank-${item.rank}`}>
                         <IconTrophy size={14} style={{ marginRight: 4 }} />
-                        {item.rank}위
+                        #{item.rank}
                       </span>
                     ) : (
-                      `${item.rank}위`
+                      `#${item.rank}`
                     )}
                   </td>
                   <td className="lb-name">
                     <strong>{item.name}</strong>
                   </td>
                   <td className="lb-score">
-                    <strong>{item.score} / 25점</strong>
+                    <strong>{item.score} / 25 pts</strong>
                   </td>
                   <td className="lb-streak">
                     <IconFlame size={14} style={{ marginRight: 4, display: "inline-block", verticalAlign: "middle" }} />
-                    {item.streak}일
+                    {item.streak} days
                   </td>
                   <td className="lb-cat">{item.category}</td>
                 </tr>
