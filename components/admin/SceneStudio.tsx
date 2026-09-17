@@ -42,6 +42,8 @@ export function SceneStudio({ scene }: Props) {
   const [notice, setNotice] = useState("");
   const [assets, setAssets] = useState<Asset[]>(scene.assets ?? []);
   const [uploading, setUploading] = useState<number | null>(null);
+  const [urlMode, setUrlMode] = useState<Record<number, boolean>>({});
+  const [urlInputs, setUrlInputs] = useState<Record<number, string>>({});
 
   const frameMap = useMemo(() => {
     const map = new Map<number, Asset>();
@@ -161,24 +163,74 @@ export function SceneStudio({ scene }: Props) {
 
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>{FRAME_HINTS[n - 1]}</p>
-                  <label style={{
-                    display: "inline-block", padding: "7px 14px", borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--line)", fontSize: 12, cursor: "pointer",
-                    background: isUploading ? "var(--paper-soft)" : "var(--paper)",
-                    color: isUploading ? "var(--muted)" : "var(--ink)",
-                  }}>
-                    {isUploading ? "Uploading…" : asset ? "Replace" : "Upload image"}
-                    <input
-                      type="file"
-                      accept="image/webp,image/jpeg,image/png"
-                      hidden
-                      disabled={isUploading}
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) void onUpload(n, f); }}
-                    />
-                  </label>
-                  {asset && (
-                    <span style={{ marginLeft: 10, fontSize: 11, color: "var(--green)" }}>✓ Uploaded</span>
-                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    {!urlMode[n] ? (
+                      <>
+                        <label style={{
+                          display: "inline-block", padding: "7px 14px", borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--line)", fontSize: 12, cursor: "pointer",
+                          background: isUploading ? "var(--paper-soft)" : "var(--paper)",
+                          color: isUploading ? "var(--muted)" : "var(--ink)",
+                        }}>
+                          {isUploading ? "Uploading…" : asset ? "Replace" : "Upload image"}
+                          <input
+                            type="file"
+                            accept="image/webp,image/jpeg,image/png"
+                            hidden
+                            disabled={isUploading}
+                            onChange={(e) => { const f = e.target.files?.[0]; if (f) void onUpload(n, f); }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setUrlMode((m) => ({ ...m, [n]: true }))}
+                          style={{ padding: "7px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", fontSize: 12, cursor: "pointer", background: "transparent", color: "var(--muted)" }}
+                        >
+                          Paste URL
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="url"
+                          placeholder="https://image.tmdb.org/…"
+                          value={urlInputs[n] ?? ""}
+                          onChange={(e) => setUrlInputs((u) => ({ ...u, [n]: e.target.value }))}
+                          style={{ flex: 1, minWidth: 200, padding: "7px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", fontSize: 12, background: "var(--paper)", color: "var(--ink)" }}
+                        />
+                        <button
+                          type="button"
+                          disabled={!urlInputs[n]?.trim() || pending}
+                          onClick={() => {
+                            const url = urlInputs[n]?.trim();
+                            if (!url) return;
+                            startTransition(async () => {
+                              const row = await attachSceneAsset({ sceneId: scene.id, publicUrl: url, position: n });
+                              setAssets((prev) => {
+                                const next = prev.filter((a) => a.frame_order !== n);
+                                return [...next, { id: row.id, public_url: row.public_url, frame_order: row.frame_order, asset_key: row.asset_key }];
+                              });
+                              setUrlMode((m) => ({ ...m, [n]: false }));
+                              setNotice(`Frame ${n} saved.`);
+                            });
+                          }}
+                          style={{ padding: "7px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", fontSize: 12, cursor: "pointer", background: "var(--paper)", color: "var(--ink)" }}
+                        >
+                          Use URL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUrlMode((m) => ({ ...m, [n]: false }))}
+                          style={{ padding: "7px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", fontSize: 12, cursor: "pointer", background: "transparent", color: "var(--muted)" }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {asset && !urlMode[n] && (
+                      <span style={{ fontSize: 11, color: "var(--green)" }}>✓ Uploaded</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

@@ -145,7 +145,7 @@ export async function publishSceneForDate(sceneId: string, gameDate: string) {
 export async function attachSceneAsset(input: {
   sceneId: string;
   publicUrl: string;
-  storageKey: string;
+  storageKey?: string;
   position: number;
   mimeType?: string;
 }) {
@@ -158,7 +158,7 @@ export async function attachSceneAsset(input: {
       {
         scene_id: input.sceneId,
         public_url: input.publicUrl,
-        asset_key: input.storageKey,
+        asset_key: input.storageKey ?? `external/${input.sceneId}/frame-${input.position}`,
         frame_order: input.position,
         mime_type: input.mimeType ?? null,
         rights_status: "review_required",
