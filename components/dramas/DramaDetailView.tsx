@@ -4,14 +4,6 @@ import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import {
-  IconConnections,
-  IconHangul,
-  IconMusic,
-  IconPeople,
-  IconPlace,
-  IconScene,
-} from "@/components/icons/Icons";
 
 type Drama = {
   id: string;
@@ -68,73 +60,6 @@ export function DramaDetailView({ drama }: Props) {
             ))}
           </div>
 
-          <div className="entity-relations-section">
-            <h3>{t("relatedEntities")}</h3>
-            <ul className="relations-list">
-              <li>
-                <IconPeople size={16} />
-                <span>
-                  <strong>{t("leadCast")}:</strong>{" "}
-                  {locale === "en"
-                    ? "IU (Lee Ji-eun), Park Bo-gum"
-                    : "아이유 (이지은), 박보검"}
-                </span>
-              </li>
-              <li>
-                <IconPlace size={16} />
-                <span>
-                  <strong>{t("filmingLocation")}:</strong>{" "}
-                  {locale === "en"
-                    ? "Seogwipo, Jeju Island"
-                    : "제주도 서귀포시"}
-                </span>
-              </li>
-              <li>
-                <IconMusic size={16} />
-                <span>
-                  <strong>{t("featuredOst")}:</strong>{" "}
-                  {locale === "en"
-                    ? "Taeyeon - All About You"
-                    : "태연 - 그대라는 시"}
-                </span>
-              </li>
-              <li>
-                <IconConnections size={16} />
-                <span>
-                  <strong>{t("keywords")}:</strong> #Jeju #SliceOfLife
-                  #NetflixOriginal
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="related-puzzles-section">
-            <h3>{t("relatedPuzzles")}</h3>
-            <div className="related-puzzles-grid">
-              <div className="rel-puzzle-chip">
-                <IconScene size={16} />
-                <div>
-                  <span>{t("typeScene")}</span>
-                  <strong>
-                    {locale === "en"
-                      ? "Today's Cut #247 (Episode 3 Iconic Cut)"
-                      : "오늘의 장면 #247 (3회 명장면)"}
-                  </strong>
-                </div>
-              </div>
-              <div className="rel-puzzle-chip">
-                <IconHangul size={16} />
-                <div>
-                  <span>{t("typeChosung")}</span>
-                  <strong>
-                    {locale === "en"
-                      ? "Chosung Guess #245 (ㅍㅆ ㅅㅇㅅㄷ)"
-                      : "초성 맞히기 #245 (ㅍㅆ ㅅㅇㅅㄷ)"}
-                  </strong>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="action-row" style={{ marginTop: 28 }}>
             <Link href="/" className="primary-btn">
