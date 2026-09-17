@@ -29,6 +29,10 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Upload URL failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const hint = !process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? " (SUPABASE_SERVICE_ROLE_KEY not set)"
+      : "";
+    console.error("[/api/uploads/media]", msg + hint);
+    return NextResponse.json({ error: msg + hint }, { status: 500 });
   }
 }
