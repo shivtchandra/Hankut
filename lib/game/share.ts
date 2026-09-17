@@ -25,7 +25,8 @@ export function buildPuzzleUrl(
   todayDate: string = seoulToday(),
 ): string {
   const url = new URL("/", `${siteOrigin()}/`);
-  if (gameDate < todayDate) url.searchParams.set("date", gameDate);
+  // Always pin date for challenge links so they work on future days too
+  if (gameDate < todayDate || ref === "challenge") url.searchParams.set("date", gameDate);
   if (ref) url.searchParams.set("ref", ref);
   return url.toString();
 }
