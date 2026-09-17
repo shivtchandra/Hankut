@@ -323,8 +323,11 @@ export function GameClient({ game, dramas, todayDate }: Props) {
               key={frameKey}
               className="scene-frame-img"
               src={currentSrc}
-              alt=""
+              alt={`${t("sceneLabel")} ${frame + 1}`}
               draggable={false}
+              fetchPriority={frame === 0 ? "high" : "auto"}
+              loading="eager"
+              decoding="async"
               onError={() => setImgBroken(true)}
             />
           ) : (
@@ -355,7 +358,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
             <IconChevronLeft size={16} /> {t("prevFrame")}
           </button>
 
-          <div className="frame-dots" aria-hidden>
+          <div className="frame-dots" role="group" aria-label={t("sceneLabel")}>
             {(frames.length ? frames : [null, null, null, null, null]).map(
               (_, index) => (
                 <button
@@ -495,7 +498,11 @@ export function GameClient({ game, dramas, todayDate }: Props) {
                 <span>{t("skipCut")}</span>
               </button>
 
-              <div className="attempt-dots-track" aria-label={`Attempt ${attempts.length + 1} of 5`}>
+              <div
+                className="attempt-dots-track"
+                role="status"
+                aria-label={`Attempt ${attempts.length + 1} of 5`}
+              >
                 {Array.from({ length: 5 }, (_, i) => {
                   const att = attempts[i];
                   const isCurrent = i === attempts.length;

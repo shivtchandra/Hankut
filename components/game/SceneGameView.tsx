@@ -93,7 +93,7 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
     }
   }
 
-  function useClue(clueId: string, unlockAfter: number) {
+  function revealClue(clueId: string, unlockAfter: number) {
     if (attempts.length < unlockAfter || usedClues.includes(clueId)) return;
     setUsedClues((prev) => [...prev, clueId]);
   }
@@ -102,11 +102,15 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
     <div className="game-shell">
       <div className="scene-wrap">
         <div className={`scene ${shake ? "scene-shake" : ""}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={frame}
             className="scene-frame-img"
             src={currentSrc}
-            alt="Kdrama scene frame"
+            alt={`${t("sceneLabel")} ${frame + 1}`}
+            fetchPriority={frame === 0 ? "high" : "auto"}
+            loading="eager"
+            decoding="async"
           />
           <div className="scene-grain" aria-hidden />
           <div className="scene-vignette" aria-hidden />
@@ -126,16 +130,19 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
             className="frame-nav-btn"
             disabled={frame === 0}
             onClick={() => setFrame((f) => Math.max(0, f - 1))}
+            aria-label="Prev cut"
           >
             <IconChevronLeft size={16} /> Prev cut
           </button>
 
-          <div className="frame-dots">
+          <div className="frame-dots" role="group" aria-label={t("sceneLabel")}>
             {frames.map((_, idx) => (
-              <span
+              <button
                 key={idx}
+                type="button"
                 className={idx <= frame ? "dot active" : "dot"}
                 onClick={() => setFrame(idx)}
+                aria-label={`Frame ${idx + 1}`}
               />
             ))}
           </div>
@@ -214,7 +221,7 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
                 type="button"
                 className={`clue ${used ? "revealed" : ""} ${unlocked ? "unlocked" : ""}`}
                 disabled={!unlocked || used}
-                onClick={() => useClue(clue.id, clue.unlockAfterAttempt)}
+                onClick={() => revealClue(clue.id, clue.unlockAfterAttempt)}
               >
                 <div className="clue-header">
                   <span>{localizeClueLabel(clue.label, locale)}</span>

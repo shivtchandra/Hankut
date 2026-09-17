@@ -1,8 +1,33 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { DM_Mono, Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { WebAppJsonLd } from "@/components/seo/JsonLd";
 import { Analytics } from "@vercel/analytics/next";
+
+const notoSansKR = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+  display: "swap",
+  preload: true,
+});
+
+const notoSerifKR = Noto_Serif_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-serif",
+  display: "swap",
+  preload: false,
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+  preload: true,
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dramacut.com";
 
@@ -33,6 +58,13 @@ export const metadata: Metadata = {
   authors: [{ name: "Dramacut Team", url: baseUrl }],
   creator: "Dramacut",
   publisher: "Dramacut",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
+    apple: "/icon.svg",
+  },
   alternates: {
     canonical: "/",
     languages: {
@@ -81,9 +113,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link
+          rel="preconnect"
+          href="https://bpohxfkuetoeumbudwti.supabase.co"
+          crossOrigin=""
+        />
+        <link
+          rel="dns-prefetch"
+          href="https://bpohxfkuetoeumbudwti.supabase.co"
+        />
         <WebAppJsonLd />
       </head>
-      <body>
+      <body className={`${notoSansKR.variable} ${notoSerifKR.variable} ${dmMono.variable}`}>
         <LocaleProvider>{children}</LocaleProvider>
         <Analytics />
       </body>

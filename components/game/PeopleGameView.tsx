@@ -66,6 +66,9 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
             className="scene-frame-img"
             src={currentSrc}
             alt="Person reveal frame"
+            fetchPriority={frame === 0 ? "high" : "auto"}
+            loading="eager"
+            decoding="async"
             style={{
               filter: frame === 0 ? "brightness(0) blur(2px)" : frame === 1 ? "contrast(1.5) blur(1px)" : "none",
               transition: "filter 0.3s ease",
