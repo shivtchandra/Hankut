@@ -82,19 +82,21 @@ export function GameClient({ game, dramas, todayDate }: Props) {
   }, [guess, dramas]);
 
   useEffect(() => {
+    // Always reset before restoring — prevents previous day's state leaking in
+    setAttempts([]);
+    setSolved(false);
+    setFrame(0);
+    setGuess("");
+    setNotice("");
+    finishedRef.current = false;
     setStreak(getStreak());
 
-    // Restore daily game state from localStorage if previously played/in-progress
     const saved = getDailyGameState(game.gameDate);
-    if (saved) {
+    if (saved && saved.gameDate === game.gameDate) {
       setAttempts(saved.attempts || []);
       setSolved(saved.solved || false);
-      if (typeof saved.frame === "number") {
-        setFrame(saved.frame);
-      }
-      if (saved.completed) {
-        finishedRef.current = true;
-      }
+      if (typeof saved.frame === "number") setFrame(saved.frame);
+      if (saved.completed) finishedRef.current = true;
     }
   }, [game.gameDate]);
 
