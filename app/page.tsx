@@ -5,6 +5,8 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { GamePage } from "@/components/game/GamePage";
 import { ViewerClockSync } from "@/components/game/ViewerClockSync";
+import { SiteNav } from "@/components/layout/SiteNav";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { getTodayGame } from "@/lib/game/today";
 import {
   VIEWER_TZ_COOKIE,
@@ -68,17 +70,21 @@ export default async function Home({ searchParams }: Props) {
 
   if (source === "demo") {
     return (
-      <main style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "60px 24px", textAlign: "center" }}>
+      <main className="game-page">
         <ViewerClockSync />
-        <p style={{ fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", fontFamily: "var(--font-mono, monospace)" }}>
-          {dateLabel}
-        </p>
-        <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 700, margin: 0 }}>
-          Today&apos;s cut is being prepared
-        </h1>
-        <p style={{ fontSize: 15, color: "var(--muted)", maxWidth: 340, margin: 0 }}>
-          Come back later — the daily puzzle drops soon.
-        </p>
+        <SiteNav />
+        <div style={{ minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "60px 24px", textAlign: "center" }}>
+          <p style={{ fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", fontFamily: "var(--font-mono, monospace)" }}>
+            {dateLabel}
+          </p>
+          <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 700, margin: 0 }}>
+            Today&apos;s cut is being prepared
+          </h1>
+          <p style={{ fontSize: 15, color: "var(--muted)", maxWidth: 340, margin: 0 }}>
+            Come back later — the daily puzzle drops soon.
+          </p>
+        </div>
+        <SiteFooter />
       </main>
     );
   }
