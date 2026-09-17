@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin-auth";
 import { TodaysFiveBuilder } from "@/components/admin/TodaysFiveBuilder";
+import { seoulToday } from "@/lib/game/dates";
 
 async function Builder() {
   await requireAdmin();
@@ -10,7 +11,7 @@ async function Builder() {
     .from("dramas")
     .select("id, title_en, title_kr")
     .order("title_en");
-  return <TodaysFiveBuilder dramas={dramas ?? []} />;
+  return <TodaysFiveBuilder dramas={dramas ?? []} today={seoulToday()} />;
 }
 
 export default function DailyPage() {

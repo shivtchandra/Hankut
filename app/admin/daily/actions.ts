@@ -208,7 +208,7 @@ export async function createSceneAndSchedule({
   const { error: dgErr } = await db
     .from("daily_games")
     .upsert(
-      { game_date: gameDate, scene_id: scene.id, difficulty, status: publish ? "scheduled" : "draft" },
+      { game_date: gameDate, scene_id: scene.id, difficulty, status: publish ? "published" : "draft" },
       { onConflict: "game_date" },
     );
 

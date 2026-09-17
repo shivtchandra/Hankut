@@ -48,9 +48,9 @@ const MODE_OPTIONS = [
   { id: "people", label: "People (누구지)", desc: "5 Silhouette Reveals", Icon: IconPeople },
 ];
 
-export function TodaysFiveBuilder({ dramas }: { dramas: Drama[] }) {
+export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: string }) {
   const params = useSearchParams();
-  const todayDefault = new Date().toISOString().slice(0, 10);
+  const todayDefault = today ?? new Date().toLocaleString("sv-SE", { timeZone: "Asia/Seoul" }).slice(0, 10);
   const [targetDate, setTargetDate] = useState(params.get("date") ?? todayDefault);
   const [gameMode, setGameMode] = useState<GameMode>("scene");
   const [difficulty, setDifficulty] = useState(5);
