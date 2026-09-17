@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { GamePage } from "@/components/game/GamePage";
@@ -12,8 +13,29 @@ import {
 } from "@/lib/game/dates";
 
 type Props = {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; ref?: string }>;
 };
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { ref } = await searchParams;
+  if (ref === "challenge") {
+    return {
+      title: "⚔️ Can you beat me? · Dramacut",
+      description: "Someone challenged you to guess today's K-drama cut. Think you can do better?",
+      openGraph: {
+        title: "⚔️ Can you beat me? · Dramacut",
+        description: "Someone challenged you to guess today's K-drama cut. Think you can do better?",
+        images: [{ url: "/api/og?title=Can+you+beat+me%3F&date=CHALLENGE", width: 1200, height: 630 }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "⚔️ Can you beat me? · Dramacut",
+        description: "Someone challenged you to guess today's K-drama cut. Think you can do better?",
+      },
+    };
+  }
+  return {};
+}
 
 export default async function Home({ searchParams }: Props) {
   const { date } = (await searchParams) || {};

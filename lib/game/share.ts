@@ -100,23 +100,24 @@ export function buildChallengeShare({
 }: ChallengeShareOptions): { title: string; text: string; url: string } {
   const url = buildPuzzleUrl(gameDate, "challenge", todayDate);
 
+  const blocks = resultBlocks(solved, attempts);
+
   const mine =
     locale === "ko"
       ? solved
-        ? `나는 ${attempts}번 만에 맞췄어.`
-        : "나는 5컷 다 보고도 못 맞췄어."
+        ? `${attempts}컷 만에 맞췄어 ${blocks}`
+        : `5컷 다 봤는데도 못 맞췄어 ${blocks}`
       : solved
-        ? `I got it in ${attempts} ${attempts === 1 ? "guess" : "guesses"}.`
-        : "I couldn't get it in 5 cuts.";
+        ? `Got it in ${attempts}/5 cuts ${blocks}`
+        : `Couldn't crack it in 5 cuts ${blocks}`;
 
-  const dare =
-    locale === "ko"
-      ? "같은 컷으로 나 이겨볼래?"
-      : "Play the same cut and beat me.";
+  const dare = locale === "ko" ? "나 이겨볼 수 있어? 👊" : "Think you can beat me? 👊";
+
+  const label = locale === "ko" ? `🎬 ${brand} 대결` : `🎬 ${brand} Challenge`;
 
   return {
     title: locale === "ko" ? `${brand} 대결 · ${gameDate}` : `${brand} Challenge · ${gameDate}`,
-    text: `${locale === "ko" ? `${brand} 대결` : `${brand} Challenge`} · ${gameDate}\n${mine}\n${dare}`,
+    text: `${label}\n${mine}\n${dare}`,
     url,
   };
 }
