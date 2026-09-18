@@ -33,6 +33,7 @@ export function SiteNav() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={true}
                   className={path === item.href ? "active" : ""}
                 >
                   {item.label}
@@ -71,6 +72,7 @@ export function SiteNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={`bottom-nav-item ${isActive ? "active" : ""}`}
               >
                 <span className="bottom-nav-icon">

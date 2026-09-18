@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { GamePage } from "@/components/game/GamePage";
 import { ViewerClockSync } from "@/components/game/ViewerClockSync";
 import { SiteNav } from "@/components/layout/SiteNav";
@@ -12,6 +13,7 @@ import {
   VIEWER_TZ_COOKIE,
   isValidGameDate,
   resolveViewerToday,
+  shiftGameDate,
 } from "@/lib/game/dates";
 
 type Props = {
@@ -83,6 +85,9 @@ export default async function Home({ searchParams }: Props) {
           <p style={{ fontSize: 15, color: "var(--muted)", maxWidth: 340, margin: 0 }}>
             Come back later — the daily puzzle drops soon.
           </p>
+          <Link href={`/?date=${shiftGameDate(today, -1)}`} style={{ marginTop: 8, fontSize: 14, color: "#DC2626", fontWeight: 600, textDecoration: "none" }}>
+            ← Play yesterday&apos;s puzzle
+          </Link>
         </div>
         <SiteFooter />
       </main>

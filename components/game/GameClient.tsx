@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { matchesAlias, normalize } from "@/lib/game/normalization";
 import {
@@ -9,6 +9,7 @@ import {
   recordDailyPlay,
   saveDailyGameState,
 } from "@/lib/game/streak";
+import { getDeviceId } from "@/lib/game/device";
 import {
   buildChallengeShare,
   buildInviteShare,
@@ -45,7 +46,6 @@ export function GameClient({ game, dramas, todayDate }: Props) {
   const [solved, setSolved] = useState(false);
   const [notice, setNotice] = useState("");
   const [shake, setShake] = useState(false);
-  const [frameKey, setFrameKey] = useState(0);
   const [imgBroken, setImgBroken] = useState(false);
   const [suggestIndex, setSuggestIndex] = useState(-1);
   const [streak, setStreak] = useState(0);
@@ -54,7 +54,9 @@ export function GameClient({ game, dramas, todayDate }: Props) {
   const [inviteNotice, setInviteNotice] = useState("");
   const [inviteLink, setInviteLink] = useState("");
   const finishedRef = useRef(false);
+  const playIdRef = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
@@ -70,16 +72,39 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     return Math.max(30 - attempts.length * 5, 5);
   }, [solved, attempts.length]);
 
+  // Pre-index normalized aliases for zero-lag instant autocomplete
+  const indexedDramas = useMemo(() => {
+    return (dramas || []).map((drama) => ({
+      drama,
+      normalizedAliases: (drama.aliases || [drama.titleKr, drama.titleEn]).map(normalize),
+    }));
+  }, [dramas]);
+
   const suggestions = useMemo(() => {
     if (!guess.trim()) return [];
     const q = normalize(guess);
+    if (!q) return [];
 
-    return dramas
-      .filter((drama) =>
-        drama.aliases.some((alias) => normalize(alias).includes(q)),
-      )
-      .slice(0, 5);
-  }, [guess, dramas]);
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const prefixRe = new RegExp(`^${escaped}`);
+    const wordRe = new RegExp(`(^|\\s)${escaped}`);
+
+    const tier1: Drama[] = []; // title starts with query
+    const tier2: Drama[] = []; // word within title starts with query
+    const tier3: Drama[] = []; // substring anywhere
+
+    for (const item of indexedDramas) {
+      const aliases = item.normalizedAliases;
+      if (aliases.some((a) => prefixRe.test(a))) {
+        tier1.push(item.drama);
+      } else if (aliases.some((a) => wordRe.test(a))) {
+        tier2.push(item.drama);
+      } else if (aliases.some((a) => a.includes(q))) {
+        tier3.push(item.drama);
+      }
+    }
+    return [...tier1, ...tier2, ...tier3].slice(0, 6);
+  }, [guess, indexedDramas]);
 
   useEffect(() => {
     // Always reset before restoring — prevents previous day's state leaking in
@@ -89,6 +114,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     setGuess("");
     setNotice("");
     finishedRef.current = false;
+    playIdRef.current = null;
     setStreak(getStreak());
 
     const saved = getDailyGameState(game.gameDate);
@@ -99,6 +125,23 @@ export function GameClient({ game, dramas, todayDate }: Props) {
       if (saved.completed) finishedRef.current = true;
     }
   }, [game.gameDate]);
+
+  const startPlay = useCallback(async () => {
+    if (playIdRef.current || finishedRef.current) return;
+    const deviceId = getDeviceId();
+    if (!deviceId) return;
+    try {
+      const res = await fetch("/api/game/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ puzzleId: game.scene.id, dailyGameId: game.id, guestId: deviceId }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { playId: string };
+        playIdRef.current = data.playId;
+      }
+    } catch {}
+  }, [game.id, game.scene.id]);
 
   useEffect(() => {
     frames.forEach((src) => {
@@ -117,7 +160,22 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     finishedRef.current = true;
     const next = recordDailyPlay(game.gameDate);
     setStreak(next);
-  }, [finished, game.gameDate]);
+    const pid = playIdRef.current;
+    if (pid) {
+      fetch("/api/game/play", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playId: pid,
+          solved,
+          score: solved ? Math.max(25 - (attempts.length - 1) * 5, 5) : 0,
+          attempts: attempts.length,
+          stepsRevealed: frame,
+          completed: true,
+        }),
+      }).catch(() => {});
+    }
+  }, [finished, game.gameDate, solved, attempts.length, frame]);
 
   // Save game progress to localStorage whenever attempts, solved, or frame changes
   useEffect(() => {
@@ -143,11 +201,23 @@ export function GameClient({ game, dramas, todayDate }: Props) {
   function goToFrame(targetIndex: number) {
     if (targetIndex < 0 || targetIndex > unlockedFrame) return;
     setFrame(targetIndex);
-    setFrameKey((k) => k + 1);
   }
 
   function advanceFrame() {
     goToFrame(Math.min(frame + 1, Math.max(frames.length - 1, 0)));
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) goToFrame(frame + 1); // left swipe → next
+    else goToFrame(frame - 1);        // right swipe → prev
   }
 
   function submitGuess(value = guess) {
@@ -158,6 +228,8 @@ export function GameClient({ game, dramas, todayDate }: Props) {
       setNotice(t("enterTitle"));
       return;
     }
+
+    startPlay();
 
     const correct = matchesAlias(clean, answer.aliases);
     const nextAttempt = attempts.length + 1;
@@ -180,13 +252,13 @@ export function GameClient({ game, dramas, todayDate }: Props) {
       setNotice(t("wrongNext"));
     } else {
       setFrame(Math.max(frames.length - 1, 0));
-      setFrameKey((k) => k + 1);
       setNotice(t("seeAnswer"));
     }
   }
 
   function skipCut() {
     if (solved || attempts.length >= 5) return;
+    startPlay();
     const nextAttempt = attempts.length + 1;
     const skipLabel = locale === "ko" ? "건너뜀" : "Skipped";
 
@@ -199,7 +271,6 @@ export function GameClient({ game, dramas, todayDate }: Props) {
       advanceFrame();
     } else {
       setFrame(Math.max(frames.length - 1, 0));
-      setFrameKey((k) => k + 1);
       setNotice(t("seeAnswer"));
     }
   }
@@ -243,8 +314,10 @@ export function GameClient({ game, dramas, todayDate }: Props) {
       todayDate,
     });
     const outcome = await shareOrCopy(payload);
-    setInviteLink(payload.url);
-    setInviteNotice(noticeFor(outcome, t("shareGameCopied")));
+    if (outcome === "copied" || outcome === "failed") {
+      setInviteNotice(noticeFor(outcome, t("shareGameCopied")));
+      setTimeout(() => setInviteNotice(""), 3000);
+    }
   }
 
   async function shareResult() {
@@ -316,11 +389,14 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     <div className="game-shell">
       {/* LEFT: Scene Cut Theater */}
       <div className="scene-wrap">
-        <div className={`scene ${shake ? "scene-shake" : ""}`}>
+        <div
+          className={`scene ${shake ? "scene-shake" : ""}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {showScene ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              key={frameKey}
               className="scene-frame-img"
               src={currentSrc}
               alt={`${t("sceneLabel")} ${frame + 1}`}
@@ -416,10 +492,8 @@ export function GameClient({ game, dramas, todayDate }: Props) {
         </div>
 
         {inviteNotice && (
-          <p className="game-notice success">{inviteNotice}</p>
+          <div className="share-toast">{inviteNotice}</div>
         )}
-
-        {inviteLink && renderShareLink(inviteLink, setInviteNotice)}
 
         {/* ACTIVE PLAY: Single Unified Search & Guess Box */}
         {!finished ? (
@@ -462,29 +536,30 @@ export function GameClient({ game, dramas, todayDate }: Props) {
                 {t("guess")}
               </button>
 
-              {/* Autocomplete Dropdown */}
-              {suggestions.length > 0 && (
-                <div className="suggestions" role="listbox">
-                  {suggestions.map((drama, index) => (
-                    <button
-                      key={drama.id}
-                      type="button"
-                      role="option"
-                      aria-selected={index === suggestIndex}
-                      className={index === suggestIndex ? "active" : ""}
-                      onClick={() => {
-                        const title = primaryTitle(drama);
-                        setGuess(title);
-                        submitGuess(title);
-                      }}
-                    >
-                      <strong>{primaryTitle(drama)}</strong>
-                      <span>{secondaryTitle(drama)} · {drama.year}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
+
+            {/* Autocomplete Dropdown — full-width, anchored to play-box */}
+            {suggestions.length > 0 && (
+              <div className="suggestions" role="listbox">
+                {suggestions.map((drama, index) => (
+                  <button
+                    key={drama.id}
+                    type="button"
+                    role="option"
+                    aria-selected={index === suggestIndex}
+                    className={index === suggestIndex ? "active" : ""}
+                    onClick={() => {
+                      const title = primaryTitle(drama);
+                      setGuess(title);
+                      submitGuess(title);
+                    }}
+                  >
+                    <strong>{primaryTitle(drama)}</strong>
+                    <span>{secondaryTitle(drama)} · {drama.year}</span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Action Row: Skip Button + Visual Attempt Dots */}
             <div className="unified-action-row">

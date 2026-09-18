@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { IconCalendar } from "@/components/icons/Icons";
+import { ArchiveGrid } from "@/components/game/ArchiveHistory";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { seoulToday } from "@/lib/game/dates";
 
@@ -13,32 +14,16 @@ async function getPastPuzzles() {
 
   const { data } = await supabase
     .from("daily_games")
-    .select(`
-      id,
-      game_date,
-      difficulty,
-      scene:scenes (
-        drama:dramas ( title_en, title_kr )
-      )
-    `)
+    .select("id, game_date")
     .lt("game_date", today)
     .in("status", ["published", "scheduled"])
     .order("game_date", { ascending: false })
     .limit(90);
 
-  return (data ?? []).map((row) => {
-    const scene = Array.isArray(row.scene) ? row.scene[0] : row.scene;
-    const drama = scene
-      ? Array.isArray(scene.drama) ? scene.drama[0] : scene.drama
-      : null;
-    return {
-      id: row.id,
-      date: row.game_date,
-      titleEn: drama?.title_en ?? "Unknown",
-      titleKr: drama?.title_kr ?? "",
-      difficulty: row.difficulty,
-    };
-  });
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    date: row.game_date,
+  }));
 }
 
 export default async function ArchivePage() {
@@ -69,25 +54,7 @@ export default async function ArchivePage() {
             </Link>
           </div>
         ) : (
-          <div className="archive-grid">
-            {puzzles.map((item) => (
-              <div key={item.id} className="archive-card">
-                <div className="archive-card-header">
-                  <span className="archive-category">Scene</span>
-                  <span className="archive-date">{item.date}</span>
-                </div>
-                <h3 className="archive-title">{item.titleEn}</h3>
-                {item.titleKr && (
-                  <p style={{ fontSize: 13, color: "var(--muted)", margin: "4px 0 0" }}>{item.titleKr}</p>
-                )}
-                <div className="archive-card-footer">
-                  <Link href={`/?date=${item.date}`} className="play-link">
-                    Play again
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ArchiveGrid puzzles={puzzles} />
         )}
       </section>
 

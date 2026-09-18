@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { GameClient } from "@/components/game/GameClient";
 import { HowItWorksModal } from "@/components/game/HowItWorksModal";
@@ -12,59 +12,118 @@ import { shiftGameDate } from "@/lib/game/dates";
 
 import type { Drama, TodayGame } from "@/types/game";
 
+const CACHE_KEY = (date: string) => `dramacut:game:v1:${date}`;
+
+function seoulDateStr() {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
+}
+
+function readCache(date: string): { game: TodayGame; dramas: Drama[] } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY(date));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { game: TodayGame; dramas: Drama[]; savedDate: string };
+    // Past dates never change; today's entry valid until midnight Seoul time
+    if (date < seoulDateStr() || parsed.savedDate === seoulDateStr()) return parsed;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(date: string, game: TodayGame, dramas: Drama[]) {
+  try {
+    localStorage.setItem(CACHE_KEY(date), JSON.stringify({ game, dramas, savedDate: seoulDateStr() }));
+  } catch {}
+}
+
 type Props = {
   game: TodayGame;
   dramas: Drama[];
   source: "supabase" | "demo";
   dateLabel: string;
-  /** Newest released puzzle date, resolved on the server for the viewer's day. */
   todayDate: string;
 };
 
-export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
+export function GamePage({ game: initialGame, dramas: initialDramas, dateLabel, todayDate }: Props) {
   const { locale, t } = useLocale();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [game, setGame] = useState(initialGame);
+  const [dramas, setDramas] = useState(initialDramas);
+  const [isLoading, setIsLoading] = useState(false);
+  const [noPuzzleDate, setNoPuzzleDate] = useState<string | null>(null);
+  const inflightRef = useRef<string | null>(null);
+
+  // Seed cache with SSR data on mount
+  useEffect(() => {
+    writeCache(initialGame.gameDate, initialGame, initialDramas);
+  }, [initialGame, initialDramas]);
+
+
+  const navigateTo = useCallback(async (targetDate: string) => {
+    const currentDisplayDate = noPuzzleDate ?? game.gameDate;
+    if (targetDate === currentDisplayDate || inflightRef.current === targetDate) return;
+
+    // Instant from cache
+    const cached = readCache(targetDate);
+    if (cached) {
+      setNoPuzzleDate(null);
+      setGame(cached.game);
+      setDramas(cached.dramas);
+      return;
+    }
+
+    // Fetch from API
+    inflightRef.current = targetDate;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/game/data?date=${targetDate}`);
+      if (!res.ok) throw new Error("fetch failed");
+      const data = await res.json() as { game: TodayGame | null; dramas: Drama[] };
+      if (!data.game) {
+        setNoPuzzleDate(targetDate);
+      } else {
+        setNoPuzzleDate(null);
+        writeCache(targetDate, data.game, data.dramas);
+        setGame(data.game);
+        setDramas(data.dramas);
+      }
+    } catch {
+      // ignore, user can retry
+    } finally {
+      setIsLoading(false);
+      inflightRef.current = null;
+    }
+  }, [game.gameDate, todayDate]);
+
+  const displayDate = noPuzzleDate ?? game.gameDate;
+  const prevDate = useMemo(() => shiftGameDate(displayDate, -1), [displayDate]);
+  const nextDate = useMemo(() => shiftGameDate(displayDate, 1), [displayDate]);
+  const isToday = displayDate >= todayDate;
+  const canGoNext = !isToday && nextDate <= todayDate;
+  const canGoPrev = displayDate > "2026-09-16";
 
   const currentDate = useMemo(
-    () => new Date(`${game.gameDate}T12:00:00+09:00`),
-    [game.gameDate]
+    () => new Date(`${displayDate}T12:00:00+09:00`),
+    [displayDate],
   );
-
-  const prevDate = useMemo(
-    () => shiftGameDate(game.gameDate, -1),
-    [game.gameDate],
-  );
-
-  const nextDate = useMemo(
-    () => shiftGameDate(game.gameDate, 1),
-    [game.gameDate],
-  );
-
-  const isToday = game.gameDate >= todayDate;
-  const canGoNext = nextDate <= todayDate;
 
   const formattedDate = useMemo(() => {
     try {
       if (locale === "ko") {
         return new Intl.DateTimeFormat("ko-KR", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          weekday: "short",
-          timeZone: "Asia/Seoul",
+          year: "numeric", month: "long", day: "numeric",
+          weekday: "short", timeZone: "Asia/Seoul",
         }).format(currentDate);
       }
       return new Intl.DateTimeFormat("en-GB", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "Asia/Seoul",
+        weekday: "short", day: "2-digit", month: "short",
+        year: "numeric", timeZone: "Asia/Seoul",
       }).format(currentDate).toUpperCase();
     } catch {
-      return dateLabel || game.gameDate;
+      return dateLabel || displayDate;
     }
-  }, [currentDate, locale, dateLabel, game.gameDate]);
+  }, [currentDate, locale, dateLabel, displayDate]);
 
   const featuredDramas = useMemo(() => dramas.slice(0, 4), [dramas]);
 
@@ -74,7 +133,6 @@ export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
 
       <section className="play-stage">
         <div className="game-stage-container">
-          {/* Concise, Clean Game Header */}
           <div className="daily-game-header">
             <div className="daily-title-block">
               <div className="daily-title-row">
@@ -93,37 +151,56 @@ export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
               <p className="daily-game-subtitle">{t("dailyGameSubtitle")}</p>
             </div>
 
-            {/* Simple, Elegant Date Changer */}
             <div className="date-nav-group">
-              <Link
-                href={`/?date=${prevDate}`}
+              {canGoPrev ? (
+              <button
+                type="button"
                 className="date-arrow-btn"
+                onClick={() => navigateTo(prevDate)}
                 title={t("prevDay")}
                 aria-label={t("prevDay")}
+                disabled={isLoading}
               >
                 <IconChevronLeft size={16} />
-              </Link>
+              </button>
+              ) : (
+              <span
+                className="date-arrow-btn disabled"
+                aria-disabled="true"
+              >
+                <IconChevronLeft size={16} />
+              </span>
+              )}
 
               <div className="date-display">
-                <span className="date-text">{formattedDate}</span>
+                <span className={`date-text${isLoading ? " date-text-loading" : ""}`}>
+                  {formattedDate}
+                </span>
                 {isToday ? (
                   <span className="date-tag-today">TODAY</span>
                 ) : (
-                  <Link href="/" className="date-tag-back" title={t("returnToday")}>
+                  <button
+                    type="button"
+                    className="date-tag-back"
+                    onClick={() => navigateTo(todayDate)}
+                    title={t("returnToday")}
+                  >
                     {t("returnToday")}
-                  </Link>
+                  </button>
                 )}
               </div>
 
               {canGoNext ? (
-                <Link
-                  href={nextDate >= todayDate ? "/" : `/?date=${nextDate}`}
+                <button
+                  type="button"
                   className="date-arrow-btn"
+                  onClick={() => navigateTo(nextDate >= todayDate ? todayDate : nextDate)}
                   title={t("nextDay")}
                   aria-label={t("nextDay")}
+                  disabled={isLoading}
                 >
                   <IconChevronRight size={16} />
-                </Link>
+                </button>
               ) : (
                 <span
                   className="date-arrow-btn disabled"
@@ -137,11 +214,23 @@ export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
             </div>
           </div>
 
-          {/* Main Focused Game View */}
-          <GameClient game={game} dramas={dramas} todayDate={todayDate} />
+          {noPuzzleDate ? (
+            <div style={{ minHeight: "40vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "48px 24px", textAlign: "center" }}>
+              <p style={{ fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                {noPuzzleDate}
+              </p>
+              <h2 style={{ fontSize: "clamp(1.2rem, 3vw, 1.6rem)", fontWeight: 700, margin: 0 }}>
+                No puzzle for this date
+              </h2>
+              <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: 300, margin: 0 }}>
+                Puzzles start from when Dramacut launched.
+              </p>
+            </div>
+          ) : (
+            <GameClient game={game} dramas={dramas} todayDate={todayDate} />
+          )}
         </div>
 
-        {/* Discovery Strip Below Game Fold */}
         <div className="discovery-strip-wrapper">
           <div className="discovery-header">
             <div>
@@ -158,11 +247,7 @@ export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
               const primary = locale === "ko" ? drama.titleKr : drama.titleEn;
               const secondary = locale === "ko" ? drama.titleEn : drama.titleKr;
               return (
-                <Link
-                  key={drama.id}
-                  href={`/dramas/${drama.id}`}
-                  className="discovery-card"
-                >
+                <Link key={drama.id} href={`/dramas/${drama.id}`} className="discovery-card">
                   <div className="discovery-card-top">
                     <span className="discovery-year">{drama.year}</span>
                     {drama.genres?.[0] && (
@@ -178,11 +263,7 @@ export function GamePage({ game, dramas, dateLabel, todayDate }: Props) {
         </div>
       </section>
 
-      <HowItWorksModal
-        isOpen={showHowItWorks}
-        onClose={() => setShowHowItWorks(false)}
-      />
-
+      <HowItWorksModal isOpen={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
       <SiteFooter />
     </main>
   );

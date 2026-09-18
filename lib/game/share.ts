@@ -25,7 +25,7 @@ export function buildPuzzleUrl(
   todayDate: string = seoulToday(),
 ): string {
   const url = new URL("/", `${siteOrigin()}/`);
-  url.searchParams.set("date", gameDate);
+  if (gameDate < todayDate) url.searchParams.set("date", gameDate);
   if (ref) url.searchParams.set("ref", ref);
   return url.toString();
 }
@@ -140,7 +140,7 @@ export function buildInviteShare({
       locale === "ko"
         ? `${brand} — 한 컷만 보고 드라마 맞히기. 오늘의 컷 풀어보기:`
         : `${brand} — guess the K-drama from one cut. Today's puzzle:`,
-    url: buildPuzzleUrl(gameDate, "invite", todayDate),
+    url: buildPuzzleUrl(gameDate, undefined, todayDate),
   };
 }
 

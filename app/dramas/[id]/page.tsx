@@ -1,6 +1,7 @@
 import { use } from "react";
 import type { Metadata } from "next";
-import { DEMO_DRAMAS } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+import { DRAMA_CATALOG } from "@/lib/drama-catalog";
 import { DramaSeriesJsonLd } from "@/components/seo/JsonLd";
 import { DramaDetailView } from "@/components/dramas/DramaDetailView";
 
@@ -10,10 +11,11 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const drama = DEMO_DRAMAS.find((d) => d.id === id) || DEMO_DRAMAS[0];
+  const drama = DRAMA_CATALOG.find((d) => d.id === id);
+  if (!drama) return {};
 
-  const title = `${drama.titleEn} (${drama.titleKr}) — K-Drama Details & Puzzles`;
-  const description = `Explore K-drama scene cuts, OSTs, cast info, and daily trivia for ${drama.titleEn} (${drama.titleKr}, ${drama.year}). Test your knowledge on Dramacut!`;
+  const title = `${drama.titleEn} (${drama.titleKr}) — K-Drama Scenes & Puzzles · Dramacut`;
+  const description = drama.descriptionEn;
 
   return {
     title,
@@ -24,31 +26,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "video.tv_show",
       images: [
         {
-          url: `/api/og?title=${encodeURIComponent(
-            drama.titleEn
-          )}&drama=${encodeURIComponent(drama.titleKr)}&date=${drama.year}`,
+          url: `/api/og?title=${encodeURIComponent(drama.titleEn)}&drama=${encodeURIComponent(drama.titleKr)}&date=${drama.year}`,
           width: 1200,
           height: 630,
-          alt: `${drama.titleEn} on Dramacut`,
         },
       ],
     },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [
-        `/api/og?title=${encodeURIComponent(
-          drama.titleEn
-        )}&drama=${encodeURIComponent(drama.titleKr)}&date=${drama.year}`,
-      ],
-    },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
 export default function DramaDetailPage({ params }: Props) {
   const { id } = use(params);
-  const drama = DEMO_DRAMAS.find((d) => d.id === id) || DEMO_DRAMAS[0];
+  const drama = DRAMA_CATALOG.find((d) => d.id === id);
+  if (!drama) notFound();
 
   return (
     <>

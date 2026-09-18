@@ -1,4 +1,5 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { createPublicSupabase } from "@/lib/supabase/public";
 import { DEMO_DRAMAS, DEMO_TODAY_GAME } from "@/lib/demo-data";
 import { isValidGameDate, seoulDate, seoulToday } from "@/lib/game/dates";
 import type { TodayGame } from "@/types/game";
@@ -82,6 +83,63 @@ function mapRow(row: {
   };
 }
 
+// ─── Plain fetchers using public client (no cookies, safe for API routes) ────
+
+export async function fetchGameByDate(gameDate: string): Promise<TodayGame | null> {
+  const supabase = createPublicSupabase();
+  const { data, error } = await supabase
+    .from("daily_games")
+    .select(
+      `id, game_date, difficulty,
+       scene:scenes (
+         id, episode,
+         drama:dramas (id, title_kr, title_en, aliases, year, network, genres),
+         assets:scene_assets (id, public_url, frame_order),
+         clues (id, type, value, unlock_after, clue_order)
+       )`,
+    )
+    .eq("game_date", gameDate)
+    .in("status", ["published", "scheduled"])
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const scene = one((data as { scene: unknown }).scene) as Parameters<typeof mapRow>[0]["scene"] | null;
+  if (!scene) return null;
+  const drama = one(scene.drama);
+  if (!drama) return null;
+  const game = mapRow({
+    ...(data as object),
+    scene: {
+      ...scene,
+      drama,
+      assets: Array.isArray(scene.assets) ? scene.assets : [],
+      clues: Array.isArray(scene.clues) ? scene.clues : [],
+    },
+  } as never);
+  return game.scene.frames.length === 0 ? null : game;
+}
+
+export async function fetchDramasList(): Promise<TodayGame["scene"]["drama"][]> {
+  const supabase = createPublicSupabase();
+  const { data } = await supabase
+    .from("dramas")
+    .select("id, title_kr, title_en, aliases, year, network, genres")
+    .eq("status", "published")
+    .limit(200);
+
+  return (
+    data?.map((row) => ({
+      id: row.id,
+      titleKr: row.title_kr,
+      titleEn: row.title_en,
+      aliases: row.aliases ?? [row.title_kr, row.title_en],
+      year: row.year,
+      network: row.network,
+      genres: row.genres ?? [],
+    })) ?? DEMO_DRAMAS
+  );
+}
+
 export async function getTodayGame(targetDate?: string): Promise<{
   game: TodayGame;
   source: "supabase" | "demo";
@@ -93,114 +151,27 @@ export async function getTodayGame(targetDate?: string): Promise<{
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!configured) {
-    return {
-      game: { ...DEMO_TODAY_GAME, gameDate },
-      source: "demo",
-      dramas: DEMO_DRAMAS,
-    };
+    return { game: { ...DEMO_TODAY_GAME, gameDate }, source: "demo", dramas: DEMO_DRAMAS };
   }
 
   try {
-    const supabase = await createSupabaseServer();
+    // Both queries run in parallel — game data + dramas list
+    const [game, dramas] = await Promise.all([
+      fetchGameByDate(gameDate),
+      fetchDramasList(),
+    ]);
 
-    const { data, error } = await supabase
-      .from("daily_games")
-      .select(
-        `
-        id,
-        game_date,
-        difficulty,
-        scene:scenes (
-          id,
-          episode,
-          drama:dramas (
-            id,
-            title_kr,
-            title_en,
-            aliases,
-            year,
-            network,
-            genres
-          ),
-          assets:scene_assets (
-            id,
-            public_url,
-            frame_order
-          ),
-          clues (
-            id,
-            type,
-            value,
-            unlock_after,
-            clue_order
-          )
-        )
-      `,
-      )
-      .eq("game_date", gameDate)
-      .in("status", ["published", "scheduled"])
-      .maybeSingle();
-
-    if (error || !data || !one((data as { scene: unknown }).scene)) {
-      return {
-        game: { ...DEMO_TODAY_GAME, gameDate },
-        source: "demo",
-        dramas: DEMO_DRAMAS,
-      };
+    if (!game) {
+      return { game: { ...DEMO_TODAY_GAME, gameDate }, source: "demo", dramas: DEMO_DRAMAS };
     }
-
-    const scene = one((data as { scene: unknown }).scene) as Parameters<typeof mapRow>[0]["scene"] | null;
-    if (!scene) {
-      return { game: DEMO_TODAY_GAME, source: "demo", dramas: DEMO_DRAMAS };
-    }
-    const drama = one(scene.drama);
-    if (!drama) {
-      return { game: DEMO_TODAY_GAME, source: "demo", dramas: DEMO_DRAMAS };
-    }
-    const game = mapRow({
-      ...(data as object),
-      scene: {
-        ...scene,
-        drama,
-        assets: Array.isArray(scene.assets) ? scene.assets : [],
-        clues: Array.isArray(scene.clues) ? scene.clues : [],
-      },
-    } as never);
-
-    if (game.scene.frames.length === 0) {
-      return {
-        game: DEMO_TODAY_GAME,
-        source: "demo",
-        dramas: DEMO_DRAMAS,
-      };
-    }
-
-    const { data: dramaRows } = await supabase
-      .from("dramas")
-      .select("id, title_kr, title_en, aliases, year, network, genres")
-      .eq("status", "published")
-      .limit(200);
-
-    const dramas =
-      dramaRows?.map((row) => ({
-        id: row.id,
-        titleKr: row.title_kr,
-        titleEn: row.title_en,
-        aliases: row.aliases ?? [row.title_kr, row.title_en],
-        year: row.year,
-        network: row.network,
-        genres: row.genres ?? [],
-      })) ?? DEMO_DRAMAS;
 
     return { game, source: "supabase", dramas };
   } catch {
-    return {
-      game: DEMO_TODAY_GAME,
-      source: "demo",
-      dramas: DEMO_DRAMAS,
-    };
+    return { game: DEMO_TODAY_GAME, source: "demo", dramas: DEMO_DRAMAS };
   }
 }
+
+
 
 // ─── Today's 5 ────────────────────────────────────────────────────────────────
 

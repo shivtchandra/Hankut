@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { playId, stepsRevealed, completed, timeSeconds } = body;
+    const { playId, stepsRevealed, completed, timeSeconds, solved, score, attempts } = body;
 
     if (!playId) {
       return NextResponse.json({ error: "playId required" }, { status: 400 });
@@ -49,6 +49,9 @@ export async function PATCH(req: NextRequest) {
     const updates: Record<string, unknown> = {};
     if (stepsRevealed !== undefined) updates.steps_revealed = stepsRevealed;
     if (timeSeconds !== undefined) updates.time_seconds = timeSeconds;
+    if (solved !== undefined) updates.solved = solved;
+    if (score !== undefined) updates.score = score;
+    if (attempts !== undefined) updates.attempts = attempts;
     if (completed) updates.completed_at = new Date().toISOString();
 
     await db.from("plays").update(updates).eq("id", playId);

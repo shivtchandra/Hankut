@@ -18,9 +18,15 @@
   --shadow-lg: 0 24px 60px rgba(28, 25, 23, 0.12);
 }
 
-* { box-sizing: border-box; }
+* { 
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-html { background: var(--paper); }
+html { 
+  background: var(--paper);
+  touch-action: manipulation;
+}
 
 body {
   margin: 0;
@@ -30,10 +36,12 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
 
 button, input, textarea, select {
   font: inherit;
+  touch-action: manipulation;
 }
 
 button {
@@ -46,9 +54,28 @@ button {
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-a { color: inherit; text-decoration: none; }
+button:active:not(:disabled),
+.how-it-works-btn:active,
+.date-arrow-btn:active:not(.disabled),
+.frame-nav-btn:active:not(:disabled),
+.dot-btn:active:not(:disabled),
+.unified-submit-btn:active:not(:disabled),
+.unified-skip-btn:active:not(:disabled),
+.lang-toggle button:active {
+  transform: scale(0.96) !important;
+  transition: transform 0.04s ease !important;
+}
+
+a { 
+  color: inherit; 
+  text-decoration: none; 
+  touch-action: manipulation;
+}
 
 .muted { color: var(--muted); }
 .danger { color: var(--red); }
@@ -204,16 +231,18 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
   box-shadow: 0 1px 4px rgba(28, 25, 23, 0.04);
   flex-shrink: 0;
 }
 
-.how-it-works-btn:hover {
-  color: #DC2626;
-  border-color: #DC2626;
-  background: #FEF2F2;
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .how-it-works-btn:hover {
+    color: #DC2626;
+    border-color: #DC2626;
+    background: #FEF2F2;
+    transform: translateY(-1px);
+  }
 }
 
 .date-nav-group {
@@ -239,15 +268,22 @@ a { color: inherit; text-decoration: none; }
   transition: background 0.15s, color 0.15s;
 }
 
-.date-arrow-btn:hover:not(.disabled) {
-  background: #DC2626;
-  color: #FFFFFF;
+@media (hover: hover) {
+  .date-arrow-btn:hover:not(.disabled) {
+    background: #DC2626;
+    color: #FFFFFF;
+  }
 }
 
-.date-arrow-btn.disabled {
+.date-arrow-btn.disabled,
+.date-arrow-btn:disabled {
   opacity: 0.25;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.date-text-loading {
+  opacity: 0.5;
 }
 
 .date-display {
@@ -804,7 +840,8 @@ a { color: inherit; text-decoration: none; }
   height: 100%;
   display: block;
   object-fit: cover;
-  animation: frameIn 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 @keyframes frameIn {
@@ -871,13 +908,15 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink);
   font-size: 12px;
   font-weight: 600;
-  transition: all 0.15s ease;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
-.frame-nav-btn:hover:not(:disabled) {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
+@media (hover: hover) {
+  .frame-nav-btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
 }
 
 .frame-nav-btn:disabled {
@@ -901,7 +940,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--line);
   cursor: pointer;
   padding: 0;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease;
 }
 
 .dot-btn.active {
@@ -919,7 +958,29 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- INTERACTIVE GAMEPLAY CONSOLE ---------- */
 
+.share-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 100px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 200;
+  animation: toast-in 0.15s ease;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .guess-panel {
+  position: relative;
   background: #FFFFFF;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -1164,6 +1225,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
 }
 
 .unified-input-wrap {
@@ -1216,9 +1278,11 @@ a { color: inherit; text-decoration: none; }
   transition: all 0.15s ease;
 }
 
-.unified-clear-btn:hover {
-  background: rgba(28, 25, 23, 0.16);
-  color: var(--ink);
+@media (hover: hover) {
+  .unified-clear-btn:hover {
+    background: rgba(28, 25, 23, 0.16);
+    color: var(--ink);
+  }
 }
 
 .unified-submit-btn {
@@ -1235,8 +1299,10 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
 }
 
-.unified-submit-btn:hover:not(:disabled) {
-  background: #DC2626;
+@media (hover: hover) {
+  .unified-submit-btn:hover:not(:disabled) {
+    background: #DC2626;
+  }
 }
 
 .unified-submit-btn:disabled {
@@ -1268,15 +1334,17 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
-  transition: all 0.18s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease, transform 0.1s ease;
 }
 
-.unified-skip-btn:hover:not(:disabled) {
-  background: #FDE68A;
-  border-color: #F59E0B;
-  color: #78350F;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+@media (hover: hover) {
+  .unified-skip-btn:hover:not(:disabled) {
+    background: #FDE68A;
+    border-color: #F59E0B;
+    color: #78350F;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+  }
 }
 
 .unified-skip-btn:active:not(:disabled) {
@@ -1737,10 +1805,10 @@ a { color: inherit; text-decoration: none; }
 
 .suggestions {
   position: absolute;
-  z-index: 10;
+  z-index: 100;
   left: 0;
-  right: 96px;
-  top: calc(100% + 8px);
+  right: 0;
+  top: calc(48px + 2px + 8px);
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1758,7 +1826,9 @@ a { color: inherit; text-decoration: none; }
 }
 
 .suggestions button:last-child { border-bottom: 0; }
-.suggestions button:hover,
+@media (hover: hover) {
+  .suggestions button:hover { background: var(--paper-soft); }
+}
 .suggestions button.active { background: var(--paper-soft); }
 
 .clue-row {
@@ -2178,10 +2248,241 @@ a { color: inherit; text-decoration: none; }
   min-height: 100vh;
 }
 
-.profile-hero, .archive-content, .leaderboard-content, .directory-content, .drama-detail-hero {
+.profile-hero, .archive-content, .leaderboard-content, .directory-content {
   width: min(1000px, calc(100% - 40px));
   margin: 40px auto 80px;
 }
+
+.drama-detail-hero {
+  width: min(1000px, calc(100% - 40px));
+  margin: 40px auto 0;
+}
+
+/* ── DRAMA DETAIL PAGE ── */
+
+.drama-detail-hero {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.drama-detail-poster {
+  position: relative;
+  width: 200px;
+  aspect-ratio: 2 / 3;
+  background: linear-gradient(135deg, #f5f0eb 0%, #e8ddd0 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+
+.drama-detail-emoji {
+  font-size: 72px;
+  line-height: 1;
+}
+
+.drama-detail-network-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.drama-back-link {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 12px;
+}
+
+.drama-back-link:hover { color: var(--ink); }
+
+.drama-detail-title {
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 6px 0 4px;
+}
+
+.drama-detail-secondary {
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.drama-detail-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.drama-detail-body {
+  width: min(1000px, calc(100% - 40px));
+  margin: 48px auto 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Score card */
+.drama-score-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.score-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.score-tier-emoji { font-size: 36px; line-height: 1; }
+
+.score-tier-label {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.score-tier-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+}
+
+.score-card-right {
+  text-align: right;
+}
+
+.score-community-pct {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+
+.score-community-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Puzzle section */
+.drama-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 20px;
+}
+
+.drama-puzzles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.puzzle-history-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.puzzle-history-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+
+.puzzle-history-card.solved { border-color: #16a34a; }
+.puzzle-history-card.failed { border-color: var(--muted); opacity: 0.7; }
+
+.puzzle-card-date {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.puzzle-status-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.puzzle-status-badge.solved { background: #dcfce7; color: #16a34a; }
+.puzzle-status-badge.failed { background: #f3f4f6; color: var(--muted); }
+.puzzle-status-badge.unplayed { background: #1C1917; color: #fff; }
+
+.puzzle-card-community {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.puzzle-card-skeleton {
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.drama-no-puzzles {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+.drama-puzzles-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .drama-detail-hero {
+    grid-template-columns: 1fr;
+  }
+  .drama-detail-poster {
+    width: 100%;
+    aspect-ratio: 16 / 7;
+  }
+  .drama-detail-emoji { font-size: 56px; }
+  .drama-score-card { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .score-card-right { text-align: left; }
+}
+
+/* ── END DRAMA DETAIL ── */
 
 .stats-grid {
   display: grid;
@@ -2374,6 +2675,24 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.3;
 }
 
+.archive-card-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+  margin: 8px 0 0;
+  letter-spacing: 0.04em;
+}
+
+.archive-played-badge {
+  font-size: 12px;
+  font-family: "DM Mono", monospace;
+  font-weight: 700;
+  margin: 8px 0 0;
+  letter-spacing: 0.04em;
+}
+.archive-played-badge.solved { color: #16a34a; }
+.archive-played-badge.failed { color: var(--muted); }
+
 .archive-card-footer {
   display: flex;
   align-items: center;
@@ -2452,11 +2771,67 @@ a { color: inherit; text-decoration: none; }
   margin-top: 20px;
 }
 
-.collection-card, .drama-entity-card {
+.collection-card {
   padding: 24px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid var(--line);
+}
+
+.drama-entity-card {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.drama-poster {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  background: linear-gradient(135deg, #f5f0eb 0%, #ebe3d8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.drama-poster-placeholder {
+  font-size: 48px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.drama-poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.15) 100%);
+}
+
+.drama-poster-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  z-index: 2;
+}
+
+.drama-card-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* ---------- LEADERBOARD TABLE ---------- */
@@ -3029,7 +3404,11 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
   .play-stage, .profile-hero, .archive-content, .leaderboard-content, .directory-content, .drama-detail-hero {
     width: calc(100% - 32px);
     padding-top: 16px;
-    padding-bottom: 48px;
+    padding-bottom: 24px;
+  }
+  .drama-detail-body {
+    width: calc(100% - 32px);
+    margin-top: 32px;
   }
   .topbar, .site-header-inner {
     width: calc(100% - 32px);
@@ -3121,4 +3500,15 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
 @media (max-width: 600px) {
   .discovery-cards-grid { grid-template-columns: 1fr; }
   .play-action-buttons { grid-template-columns: 1fr; }
+}
+
+/* ---------- NARROW PHONE (≤430px) — keep guess panel above fold ---------- */
+@media (max-width: 430px) {
+  .daily-game-header { gap: 6px; margin-bottom: 8px; }
+  .daily-title-block { gap: 2px; }
+  .daily-game-subtitle { display: none; }
+  .daily-title-row { margin-bottom: 0; }
+  .daily-game-title { font-size: 20px; }
+  .date-nav-group { margin-top: 0; margin-bottom: 0; padding: 6px 12px; }
+  .scene { aspect-ratio: 16 / 9; }
 }
