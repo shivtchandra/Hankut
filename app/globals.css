@@ -3192,6 +3192,64 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
   transition: all 0.2s ease;
 }
 
+/* ── ANALYTICS ── */
+
+.analytics-section-label {
+  font-size: 11px;
+  font-family: "DM Mono", monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.analytics-trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 100px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 20px 0;
+  margin-bottom: 8px;
+}
+
+.trend-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+}
+
+.trend-bar-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink);
+  min-height: 14px;
+  line-height: 1;
+}
+
+.trend-bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--ink);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
+}
+
+.trend-bar-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+  padding: 4px 0 8px;
+}
+
+/* ── END ANALYTICS ── */
+
 /* Form Grid & Field Alignment */
 .form-grid {
   display: grid;
