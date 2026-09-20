@@ -117,7 +117,7 @@ export const dictionaries = {
     howItWorksRule2Desc: "Search in Korean or English. Each wrong guess or skip reveals the next frame from the same scene.",
     howItWorksRule3Title: "3. Score and streak",
     howItWorksRule3Desc: "Guess on frame 1 for max 25 points, down to 5 points on frame 5. Build your daily streak!",
-    howItWorksPts: "points",
+    howItWorksPts: "pts",
     howItWorksClose: "Got it, let's play",
     returnToday: "Today",
     prevDay: "Previous cut",

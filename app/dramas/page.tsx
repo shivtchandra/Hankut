@@ -4,53 +4,67 @@ import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { DRAMA_CATALOG } from "@/lib/drama-catalog";
 
 export default function DramasDirectoryPage() {
-  const { locale, t } = useLocale();
+  const { locale } = useLocale();
+  const isKo = locale === "ko";
 
   return (
     <main className="dramas-directory-page">
       <SiteNav />
 
       <section className="directory-content">
-        <div className="directory-header">
-          <span className="eyebrow">{locale === "ko" ? "드라마 아카이브" : "Drama Archive"}</span>
-          <h1>{t("dramasTitle")}</h1>
-          <p className="dir-sub">{t("dramasSubtitle")}</p>
-        </div>
+        <div className="coming-soon-card">
+          <div className="coming-soon-badge">
+            <span className="badge-pulse" />
+            <span className="badge-text">
+              {isKo ? "🎬 촬영 및 편집 중 · IN PRODUCTION" : "🎬 IN PRODUCTION · COMING SOON"}
+            </span>
+          </div>
 
-        <div className="dramas-grid">
-          {DRAMA_CATALOG.map((drama) => {
-            const primaryTitle = locale === "en" ? drama.titleEn : drama.titleKr;
-            const secondaryTitle = locale === "en" ? drama.titleKr : drama.titleEn;
-            const desc = locale === "en" ? drama.descriptionEn : drama.descriptionKr;
-            const genres = locale === "en" ? drama.genresEn : drama.genresKr;
-            return (
-              <Link key={drama.id} href={`/dramas/${drama.id}`} className="drama-entity-card">
-                <div className="drama-poster">
-                  <span className="drama-poster-placeholder">{drama.emoji}</span>
-                  <div className="drama-poster-overlay" />
-                  <span className="drama-poster-badge">{drama.network}</span>
-                </div>
-                <div className="drama-card-body">
-                  <span className="drama-year">{drama.year} · {drama.network}</span>
-                  <h2>{primaryTitle}</h2>
-                  <p style={{ fontSize: "13px", color: "var(--muted)", marginTop: "-4px", marginBottom: "8px" }}>
-                    {secondaryTitle}
-                  </p>
-                  <p style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.45, marginBottom: "12px" }}>
-                    {desc}
-                  </p>
-                  <div className="genres-list">
-                    {genres.map((g) => (
-                      <span key={g} className="genre-pill">{g}</span>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          <h1 className="coming-soon-title">
+            {isKo
+              ? "더 많은 드라마 컷을 열심히 준비하고 있어요"
+              : "We're Curating the Next Iconic Cuts"}
+          </h1>
+
+          <p className="coming-soon-sub">
+            {isKo
+              ? "명대사, 숨겨진 복선, OST부터 인생 드라마 백과사전까지 — 더욱 풍성하고 몰입감 넘치는 K-드라마 도감으로 찾아올게요. 조금만 기다려주세요!"
+              : "From iconic scene cuts and soundtrack trivia to hidden easter eggs — we're crafting a rich K-drama encyclopedia. The directory will premiere soon!"}
+          </p>
+
+          <div className="coming-soon-features">
+            <div className="coming-soon-feature-item">
+              <span className="feature-icon">🎞️</span>
+              <div className="feature-text">
+                <strong>{isKo ? "명장면 아카이브" : "Iconic Scene Vault"}</strong>
+                <span>{isKo ? "드라마별 명장면 컷 모아보기" : "Browse cuts by drama"}</span>
+              </div>
+            </div>
+
+            <div className="coming-soon-feature-item">
+              <span className="feature-icon">🎧</span>
+              <div className="feature-text">
+                <strong>{isKo ? "OST & 클루 사전" : "OST & Clues"}</strong>
+                <span>{isKo ? "명곡과 촬영지 비하인드" : "Soundtracks & filming lore"}</span>
+              </div>
+            </div>
+
+            <div className="coming-soon-feature-item">
+              <span className="feature-icon">🏆</span>
+              <div className="feature-text">
+                <strong>{isKo ? "덕력 챌린지" : "Fan Challenges"}</strong>
+                <span>{isKo ? "장르별/배우별 맞춤 퀴즈" : "Themed actor & genre quizzes"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="coming-soon-actions">
+            <Link href="/" className="coming-soon-primary-btn">
+              {isKo ? "오늘의 드라마 맞히러 가기 →" : "Play Today's Game →"}
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -58,3 +72,4 @@ export default function DramasDirectoryPage() {
     </main>
   );
 }
+
