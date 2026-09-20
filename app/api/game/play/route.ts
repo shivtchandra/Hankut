@@ -4,10 +4,10 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { puzzleId, dailyGameId, dailySetItemId, challengeId, guestId } = body;
+    const { dailyGameId, dailySetItemId, challengeId, guestId } = body;
 
-    if (!puzzleId) {
-      return NextResponse.json({ error: "puzzleId required" }, { status: 400 });
+    if (!dailyGameId) {
+      return NextResponse.json({ error: "dailyGameId required" }, { status: 400 });
     }
 
     const db = await createSupabaseAdmin();
@@ -15,8 +15,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await db
       .from("plays")
       .insert({
-        puzzle_id: puzzleId,
-        daily_game_id: dailyGameId ?? null,
+        daily_game_id: dailyGameId,
         daily_set_item_id: dailySetItemId ?? null,
         challenge_id: challengeId ?? null,
         guest_id: guestId ?? null,

@@ -134,7 +134,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
       const res = await fetch("/api/game/play", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ puzzleId: game.scene.id, dailyGameId: game.id, guestId: deviceId }),
+        body: JSON.stringify({ dailyGameId: game.id, guestId: deviceId }),
       });
       if (res.ok) {
         const data = await res.json() as { playId: string };
