@@ -63,6 +63,53 @@ export function GamePage({ game, todaysFive, dramas, dateLabel, todayDate }: Pro
 
   const featuredDramas = useMemo(() => (dramas || []).slice(0, 4), [dramas]);
 
+  const pageTitle = useMemo(() => {
+    if (todaysFive && todaysFive.items.length > 1) {
+      return locale === "ko" ? "오늘의 5컷" : "Today's 5";
+    }
+    if (todaysFive && todaysFive.items.length === 1) {
+      const type = todaysFive.items[0].type;
+      if (type === "song") return locale === "ko" ? "데일리 오디오 컷" : "Daily Audio Cut";
+      if (type === "chosung") return locale === "ko" ? "데일리 초성 컷" : "Daily Chosung Cut";
+      if (type === "people") return locale === "ko" ? "데일리 인물 컷" : "Daily Face Cut";
+      if (type === "connections") return locale === "ko" ? "데일리 커넥션" : "Daily Connections";
+      return locale === "ko" ? "데일리 장면 컷" : "Daily Scene Cut";
+    }
+    return t("dailyGameTitle");
+  }, [todaysFive, locale, t]);
+
+  const pageSubtitle = useMemo(() => {
+    if (todaysFive && todaysFive.items.length > 1) {
+      return locale === "ko"
+        ? "매일 새롭게 열리는 5가지 K-컬처 퍼즐에 도전하세요."
+        : "5 daily K-culture puzzles. Solve earlier for more points.";
+    }
+    if (todaysFive && todaysFive.items.length === 1) {
+      const type = todaysFive.items[0].type;
+      if (type === "song") {
+        return locale === "ko"
+          ? "5개 구간으로 듣는 OST. 드라마 제목을 맞혀보세요."
+          : "5 audio clips from one song. Guess the drama — solve earlier for more points.";
+      }
+      if (type === "chosung") {
+        return locale === "ko"
+          ? "초성 힌트를 보고 정답을 맞혀보세요."
+          : "Guess the drama title from Korean initial consonants.";
+      }
+      if (type === "people") {
+        return locale === "ko"
+          ? "5단계로 밝혀지는 인물. 누구인지 맞혀보세요."
+          : "5 reveal steps. Guess the actor or character.";
+      }
+      if (type === "connections") {
+        return locale === "ko"
+          ? "연관된 단어 4개씩 그룹을 완성하세요."
+          : "Find groups of four related items.";
+      }
+    }
+    return t("dailyGameSubtitle");
+  }, [todaysFive, locale, t]);
+
   return (
     <main className="game-page">
       <SiteNav />
@@ -72,7 +119,7 @@ export function GamePage({ game, todaysFive, dramas, dateLabel, todayDate }: Pro
           <div className="daily-game-header">
             <div className="daily-title-block">
               <div className="daily-title-row">
-                <h1 className="daily-game-title">{t("dailyGameTitle")}</h1>
+                <h1 className="daily-game-title">{pageTitle}</h1>
                 <button
                   type="button"
                   className="how-it-works-btn"
@@ -84,7 +131,7 @@ export function GamePage({ game, todaysFive, dramas, dateLabel, todayDate }: Pro
                   <span>{t("howItWorksBtn")}</span>
                 </button>
               </div>
-              <p className="daily-game-subtitle">{t("dailyGameSubtitle")}</p>
+              <p className="daily-game-subtitle">{pageSubtitle}</p>
             </div>
 
             <div className="date-nav-group">
