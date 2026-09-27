@@ -169,6 +169,11 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
             <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
             <h3>{payload.titleKr}</h3>
             <p>{payload.artistKr} {payload.dramaTitle ? `(${payload.dramaTitle})` : ""}</p>
+            {payload.sourceUrl && (
+              <a href={payload.sourceUrl} target="_blank" rel="noopener noreferrer">
+                Spotify에서 전체 듣기 ↗
+              </a>
+            )}
           </div>
         )}
 

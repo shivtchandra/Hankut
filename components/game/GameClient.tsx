@@ -220,7 +220,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     else goToFrame(frame - 1);        // right swipe → prev
   }
 
-  function submitGuess(value = guess) {
+  function submitGuess(value = guess, pickedDramaId?: string) {
     if (solved || attempts.length >= 5) return;
 
     const clean = value.trim();
@@ -231,7 +231,9 @@ export function GameClient({ game, dramas, todayDate }: Props) {
 
     startPlay();
 
-    const correct = matchesAlias(clean, answer.aliases);
+    const correct =
+      (pickedDramaId !== undefined && pickedDramaId === answer.id) ||
+      matchesAlias(clean, answer.aliases);
     const nextAttempt = attempts.length + 1;
 
     setAttempts((prev) => [...prev, clean]);
@@ -376,7 +378,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
         const drama = suggestions[suggestIndex];
         const title = primaryTitle(drama);
         setGuess(title);
-        submitGuess(title);
+        submitGuess(title, drama.id);
       } else {
         submitGuess();
       }
@@ -551,7 +553,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
                     onClick={() => {
                       const title = primaryTitle(drama);
                       setGuess(title);
-                      submitGuess(title);
+                      submitGuess(title, drama.id);
                     }}
                   >
                     <strong>{primaryTitle(drama)}</strong>

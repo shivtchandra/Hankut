@@ -111,6 +111,8 @@ export type SongPayload = {
   segments: number[]; // e.g. [1, 2, 4, 7, 12]
   startSeconds?: number; // where each reveal begins in the clip
   dramaTitle?: string;
+  /** Full-track link (e.g. Spotify) shown after the answer is revealed. */
+  sourceUrl?: string;
   aliases: string[];
   clues: Clue[];
 };

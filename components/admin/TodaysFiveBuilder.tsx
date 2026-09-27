@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createSceneAndSchedule } from "@/app/admin/daily/actions";
 import { quickCreateDrama } from "@/app/admin/dramas/actions";
+import { saveSongPuzzle } from "@/app/admin/audio/actions";
+import { normalize } from "@/lib/game/normalization";
 import { extractChosung } from "@/lib/game/normalization";
 import { compressImageFile } from "@/lib/client/image-optimizer";
 
@@ -15,7 +17,19 @@ import {
   IconPeople,
 } from "@/components/icons/Icons";
 
-type Drama = { id: string; title_en: string; title_kr: string };
+type Drama = { id: string; title_en: string; title_kr: string; aliases?: string[] | null };
+
+type SpotifyLookup = {
+  spotifyUrl: string;
+  title: string;
+  artist: string;
+  cover: string | null;
+  previews: { trackName: string; artistName: string; previewUrl: string; storeUrl: string }[];
+};
+
+/** Cumulative reveal lengths (seconds) for the 5 song clips. */
+const SONG_SEGMENTS = [1, 2, 4, 7, 12];
+const SONG_CLIP_TOTAL = SONG_SEGMENTS[SONG_SEGMENTS.length - 1];
 type GameMode = "scene" | "song" | "chosung" | "connections" | "people";
 
 function diffColor(d: number) {
@@ -60,6 +74,12 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
   const [selectedDrama, setSelectedDrama] = useState<Drama | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [creatingDrama, setCreatingDrama] = useState(false);
+  const [newDrama, setNewDrama] = useState<{
+    titleEn: string;
+    titleKr: string;
+    altTitles: string;
+    year: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
 
@@ -72,6 +92,13 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
   const [songTitle, setSongTitle] = useState("");
   const [artistName, setArtistName] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
+  const [spotifyInput, setSpotifyInput] = useState("");
+  const [spotifyLookup, setSpotifyLookup] = useState<SpotifyLookup | null>(null);
+  const [lookingUpSpotify, setLookingUpSpotify] = useState(false);
+  const [songStart, setSongStart] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const songAudioRef = useRef<HTMLAudioElement | null>(null);
+  const songStopTimer = useRef<number | null>(null);
   const [uploadingAudio, setUploadingAudio] = useState(false);
 
   // 3. Chosung state
@@ -104,18 +131,37 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
       ? []
       : dramas
           .filter((d) => {
-            const q = dramaQuery.toLowerCase();
-            return d.title_en.toLowerCase().includes(q) || d.title_kr.includes(dramaQuery);
+            const q = normalize(dramaQuery);
+            if (!q) return false;
+            return [d.title_en, d.title_kr, ...(d.aliases ?? [])].some((t) => normalize(t).includes(q));
           })
           .slice(0, 8);
 
-  async function handleCreateDrama() {
+  function openNewDramaForm() {
     const name = dramaQuery.trim();
     if (!name) return;
+    const isKorean = /[가-힣]/.test(name);
+    setNewDrama({ titleEn: isKorean ? "" : name, titleKr: isKorean ? name : "", altTitles: "", year: "" });
+    setShowSuggestions(false);
+  }
+
+  async function handleCreateDrama() {
+    if (!newDrama) return;
+    if (!newDrama.titleEn.trim() || !newDrama.titleKr.trim()) {
+      setNotice({ type: "err", msg: "English and Korean titles are both required" });
+      return;
+    }
     setCreatingDrama(true);
     try {
-      const drama = await quickCreateDrama(name);
+      const year = Number(newDrama.year);
+      const drama = await quickCreateDrama({
+        titleEn: newDrama.titleEn,
+        titleKr: newDrama.titleKr,
+        altTitles: newDrama.altTitles.split(","),
+        year: Number.isInteger(year) && year > 1900 ? year : null,
+      });
       setSelectedDrama(drama);
+      setNewDrama(null);
       setDramaQuery("");
       setShowSuggestions(false);
     } catch (e) {
@@ -169,6 +215,42 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
     } finally {
       setUploadingAudio(false);
     }
+  }
+
+  async function handleSpotifyLookup() {
+    const url = spotifyInput.trim();
+    if (!url) return;
+    setLookingUpSpotify(true);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/admin/spotify-lookup?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Spotify lookup failed");
+      const lookup = data as SpotifyLookup;
+      setSpotifyLookup(lookup);
+      setSongTitle(lookup.title);
+      setArtistName(lookup.artist);
+      setSongStart(0);
+      if (lookup.previews[0]) {
+        setAudioUrl(lookup.previews[0].previewUrl);
+        setNotice({ type: "ok", msg: "Imported from Spotify — 30s preview loaded. Pick a start point." });
+      } else {
+        setNotice({ type: "err", msg: "Found the track, but no preview audio exists for it. Upload the file instead." });
+      }
+    } catch (e) {
+      setNotice({ type: "err", msg: e instanceof Error ? e.message : "Spotify lookup failed" });
+    } finally {
+      setLookingUpSpotify(false);
+    }
+  }
+
+  function playSongClip(seconds: number) {
+    const audio = songAudioRef.current;
+    if (!audio) return;
+    if (songStopTimer.current) window.clearTimeout(songStopTimer.current);
+    audio.currentTime = songStart;
+    void audio.play();
+    songStopTimer.current = window.setTimeout(() => audio.pause(), seconds * 1000);
   }
 
   async function handleBulkFiles(files: FileList) {
@@ -241,6 +323,26 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
           difficulty,
           publish,
         });
+      }
+
+      if (gameMode === "song") {
+        const result = await saveSongPuzzle({
+          titleKr: songTitle,
+          artistKr: artistName,
+          dramaTitle: selectedDrama?.title_kr,
+          audioUrl,
+          startSeconds: songStart,
+          segments: SONG_SEGMENTS,
+          aliases: [],
+          gameDate: targetDate,
+          publish,
+          sourceUrl: spotifyLookup?.spotifyUrl,
+        });
+        if (!result.ok) {
+          setNotice({ type: "err", msg: result.errors.join(" ") });
+          setSaving(false);
+          return;
+        }
       }
 
       setNotice({
@@ -518,8 +620,8 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                     {dramaQuery.trim().length > 0 && (
                       <button
                         type="button"
-                        onClick={handleCreateDrama}
-                        disabled={creatingDrama}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={openNewDramaForm}
                         style={{
                           display: "block",
                           width: "100%",
@@ -527,15 +629,87 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                           padding: "8px 12px",
                           background: "none",
                           border: "none",
-                          cursor: creatingDrama ? "default" : "pointer",
+                          cursor: "pointer",
                           fontSize: 13,
                           color: "var(--accent)",
                           fontStyle: "italic",
                         }}
                       >
-                        {creatingDrama ? "Creating…" : `+ Add "${dramaQuery.trim()}" as new drama`}
+                        {suggestions.length === 0 ? "Not in database — " : ""}+ Add &quot;{dramaQuery.trim()}&quot; as new drama
                       </button>
                     )}
+                  </div>
+                )}
+                {newDrama && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: 12,
+                      border: "1px solid var(--line)",
+                      borderRadius: "var(--radius-sm)",
+                      display: "grid",
+                      gap: 8,
+                      gridTemplateColumns: "1fr 1fr",
+                    }}
+                  >
+                    {(
+                      [
+                        ["titleEn", "English title *", "Strong Woman Do Bong-soon"],
+                        ["titleKr", "Korean title *", "힘쎈여자 도봉순"],
+                        ["altTitles", "Other titles (comma separated)", "Strong Girl Bong-soon"],
+                        ["year", "Year", "2017"],
+                      ] as const
+                    ).map(([key, label, placeholder]) => (
+                      <label key={key} style={{ fontSize: 12, display: "grid", gap: 4 }}>
+                        {label}
+                        <input
+                          value={newDrama[key]}
+                          inputMode={key === "year" ? "numeric" : undefined}
+                          placeholder={placeholder}
+                          onChange={(e) => setNewDrama({ ...newDrama, [key]: e.target.value })}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--line)",
+                            fontSize: 13,
+                          }}
+                        />
+                      </label>
+                    ))}
+                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        onClick={() => setNewDrama(null)}
+                        style={{
+                          fontSize: 13,
+                          padding: "6px 12px",
+                          borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--line)",
+                          background: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCreateDrama}
+                        disabled={creatingDrama}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          padding: "6px 12px",
+                          borderRadius: "var(--radius-sm)",
+                          border: "none",
+                          background: "var(--accent)",
+                          color: "#fff",
+                          cursor: creatingDrama ? "default" : "pointer",
+                          opacity: creatingDrama ? 0.6 : 1,
+                        }}
+                      >
+                        {creatingDrama ? "Adding…" : "Add drama & select"}
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
@@ -734,6 +908,87 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
         <div className="admin-card" style={{ padding: "20px" }}>
           <h3 style={{ margin: "0 0 16px", fontSize: 16 }}>Upload Song / OST Audio File</h3>
 
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontWeight: 600, fontSize: 13, display: "block", marginBottom: 6 }}>
+              Import from Spotify link
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                type="url"
+                placeholder="https://open.spotify.com/track/…"
+                value={spotifyInput}
+                onChange={(e) => setSpotifyInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleSpotifyLookup();
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--line)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => void handleSpotifyLookup()}
+                disabled={lookingUpSpotify || !spotifyInput.trim()}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--line)",
+                  background: "var(--paper)",
+                  fontSize: 13,
+                  cursor: lookingUpSpotify ? "default" : "pointer",
+                }}
+              >
+                {lookingUpSpotify ? "Looking up…" : "Import"}
+              </button>
+            </div>
+            <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted)" }}>
+              Fills title &amp; artist and loads Apple&apos;s official 30s preview. Players get a
+              &quot;listen on Spotify&quot; link after the reveal.
+            </p>
+
+            {spotifyLookup && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  marginTop: 10,
+                  padding: 10,
+                  border: "1px solid var(--line)",
+                  borderRadius: "var(--radius-sm)",
+                }}
+              >
+                {spotifyLookup.cover && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={spotifyLookup.cover} alt="" width={48} height={48} style={{ borderRadius: 4 }} />
+                )}
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
+                  <strong>{spotifyLookup.title}</strong>
+                  <span style={{ color: "var(--muted)", marginLeft: 6 }}>{spotifyLookup.artist}</span>
+                  {spotifyLookup.previews.length > 1 && (
+                    <select
+                      value={audioUrl}
+                      onChange={(e) => setAudioUrl(e.target.value)}
+                      style={{ display: "block", marginTop: 6, fontSize: 12, maxWidth: "100%" }}
+                    >
+                      {spotifyLookup.previews.map((p) => (
+                        <option key={p.previewUrl} value={p.previewUrl}>
+                          Preview: {p.trackName} — {p.artistName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <label style={{ fontWeight: 600, fontSize: 13, display: "block", marginBottom: 6 }}>
@@ -802,10 +1057,30 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
             {audioUrl && (
               <div style={{ marginTop: 12 }}>
                 <span style={{ fontSize: 12, color: "var(--green)", fontWeight: 600 }}>
-                  ✓ Audio track uploaded!
+                  ✓ Audio track ready
                 </span>
-                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                <audio src={audioUrl} controls style={{ display: "block", marginTop: 8, width: "100%" }} />
+                <audio
+                  ref={songAudioRef}
+                  src={audioUrl}
+                  controls
+                  onLoadedMetadata={(e) => setAudioDuration(e.currentTarget.duration || 0)}
+                  style={{ display: "block", marginTop: 8, width: "100%" }}
+                />
+                <label style={{ fontWeight: 600, fontSize: 13, display: "block", margin: "12px 0 6px" }}>
+                  Clip start point: {songStart.toFixed(1)}s
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(audioDuration - SONG_CLIP_TOTAL, 0)}
+                  step={0.5}
+                  value={songStart}
+                  onChange={(e) => setSongStart(Number(e.target.value))}
+                  style={{ width: "100%" }}
+                />
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)" }}>
+                  All 5 clips play from here. Click a clip below to hear it.
+                </p>
               </div>
             )}
           </div>
@@ -822,8 +1097,12 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                 { label: "Clip 4", sec: "7s Sample", pts: "10 pts" },
                 { label: "Clip 5", sec: "12s Sample", pts: "5 pts" },
               ].map((c, i) => (
-                <div
+                <button
                   key={i}
+                  type="button"
+                  disabled={!audioUrl}
+                  onClick={() => playSongClip(SONG_SEGMENTS[i])}
+                  title={audioUrl ? `Play ${c.sec.toLowerCase()} from ${songStart}s` : "Add audio first"}
                   style={{
                     flex: 1,
                     padding: "10px",
@@ -831,12 +1110,14 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                     borderRadius: "var(--radius-sm)",
                     textAlign: "center",
                     border: "1px solid var(--line)",
+                    cursor: audioUrl ? "pointer" : "default",
+                    font: "inherit",
                   }}
                 >
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{audioUrl ? `▶ ${c.label}` : c.label}</div>
                   <strong style={{ fontSize: 14, display: "block", margin: "2px 0" }}>{c.sec}</strong>
                   <span style={{ fontSize: 11, color: "var(--green)" }}>{c.pts}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>

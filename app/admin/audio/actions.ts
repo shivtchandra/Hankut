@@ -25,6 +25,8 @@ export type SongPuzzleDraft = {
   aliases: string[];
   gameDate?: string | null;
   publish: boolean;
+  /** Where players can hear the full track (e.g. Spotify), shown on reveal. */
+  sourceUrl?: string;
 };
 
 export type SavedSongPuzzle = {
@@ -104,6 +106,7 @@ export async function saveSongPuzzle(
     title_en: titleEn,
     drama_title: dramaTitle,
     start_seconds: startSeconds,
+    ...(draft.sourceUrl ? { source_url: draft.sourceUrl } : {}),
   };
 
   const status = draft.publish ? "published" : "draft";

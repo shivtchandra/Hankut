@@ -1,5 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createPublicSupabase } from "@/lib/supabase/public";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { DEMO_DRAMAS, DEMO_TODAY_GAME } from "@/lib/demo-data";
 import { isValidGameDate, seoulDate, seoulToday } from "@/lib/game/dates";
 import type { TodayGame } from "@/types/game";
@@ -121,11 +122,14 @@ export async function fetchGameByDate(gameDate: string): Promise<TodayGame | nul
 
 export async function fetchDramasList(): Promise<TodayGame["scene"]["drama"][]> {
   const supabase = createPublicSupabase();
-  const { data } = await supabase
-    .from("dramas")
-    .select("id, title_kr, title_en, aliases, year, network, genres")
-    .eq("status", "published")
-    .limit(200);
+  const data = await fetchAllRows((from, to) =>
+    supabase
+      .from("dramas")
+      .select("id, title_kr, title_en, aliases, year, network, genres")
+      .eq("status", "published")
+      .order("id")
+      .range(from, to),
+  ).catch(() => null);
 
   return (
     data?.map((row) => ({
@@ -249,6 +253,7 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
       segments: audioSegments.length > 0 ? audioSegments : [1, 2, 4, 7, 12],
       startSeconds: Number(puzzle.metadata?.start_seconds ?? 0),
       dramaTitle: puzzle.metadata?.drama_title,
+      sourceUrl: puzzle.metadata?.source_url,
       aliases: answers.map((a: { answer_text: string }) => a.answer_text),
       clues: mapClues(clues),
     };

@@ -3,7 +3,8 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q")?.trim() ?? "";
+  // Strip PostgREST filter syntax chars (commas/parens break the .or() filter) and LIKE wildcards.
+  const q = (searchParams.get("q") ?? "").replace(/[,()%_*\\"]/g, " ").trim();
   const type = searchParams.get("type") ?? "drama";
 
   if (q.length < 1) return NextResponse.json([]);
