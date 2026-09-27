@@ -24,6 +24,8 @@ type SpotifyLookup = {
   title: string;
   artist: string;
   cover: string | null;
+  audioUrl?: string | null;
+  isFullTrack?: boolean;
   previews: { trackName: string; artistName: string; previewUrl: string; storeUrl: string }[];
 };
 
@@ -240,11 +242,19 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
       setSongTitle(lookup.title);
       setArtistName(lookup.artist);
       setSongClips(DEFAULT_SONG_CLIPS);
-      if (lookup.previews[0]) {
-        setAudioUrl(lookup.previews[0].previewUrl);
-        setNotice({ type: "ok", msg: "Imported from Spotify — 30s preview loaded. Pick a start point." });
+      if (lookup.audioUrl) {
+        setAudioUrl(lookup.audioUrl);
+        setNotice({
+          type: "ok",
+          msg: lookup.isFullTrack
+            ? "Imported full song from Spotify! Set each clip's start and length."
+            : "Imported from Spotify — 30s preview loaded. Pick a start point.",
+        });
       } else {
-        setNotice({ type: "err", msg: "Found the track, but no preview audio exists for it. Upload the file instead." });
+        setNotice({
+          type: "err",
+          msg: "Found the track, but no audio could be imported. Upload the file instead.",
+        });
       }
     } catch (e) {
       setNotice({ type: "err", msg: e instanceof Error ? e.message : "Spotify lookup failed" });
@@ -959,12 +969,12 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                   cursor: lookingUpSpotify ? "default" : "pointer",
                 }}
               >
-                {lookingUpSpotify ? "Looking up…" : "Import"}
+                {lookingUpSpotify ? "Importing full song…" : "Import"}
               </button>
             </div>
             <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted)" }}>
-              Fills title &amp; artist and loads Apple&apos;s official 30s preview. Players get a
-              &quot;listen on Spotify&quot; link after the reveal.
+              Fills title &amp; artist and imports the full song. Players get a &quot;listen on
+              Spotify&quot; link after the reveal.
             </p>
 
             {spotifyLookup && (
@@ -984,17 +994,29 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                   <img src={spotifyLookup.cover} alt="" width={48} height={48} style={{ borderRadius: 4 }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
-                  <strong>{spotifyLookup.title}</strong>
-                  <span style={{ color: "var(--muted)", marginLeft: 6 }}>{spotifyLookup.artist}</span>
-                  {spotifyLookup.previews.length > 1 && (
+                  <div>
+                    <strong>{spotifyLookup.title}</strong>
+                    <span style={{ color: "var(--muted)", marginLeft: 6 }}>{spotifyLookup.artist}</span>
+                  </div>
+                  {spotifyLookup.isFullTrack && (
+                    <div style={{ marginTop: 2, fontSize: 12, color: "var(--green)", fontWeight: 600 }}>
+                      ✓ Full song imported &amp; ready
+                    </div>
+                  )}
+                  {spotifyLookup.previews.length > 0 && (
                     <select
                       value={audioUrl}
                       onChange={(e) => setAudioUrl(e.target.value)}
                       style={{ display: "block", marginTop: 6, fontSize: 12, maxWidth: "100%" }}
                     >
+                      {spotifyLookup.audioUrl && (
+                        <option value={spotifyLookup.audioUrl}>
+                          {spotifyLookup.isFullTrack ? "Full Song (Imported)" : "Preview"}
+                        </option>
+                      )}
                       {spotifyLookup.previews.map((p) => (
                         <option key={p.previewUrl} value={p.previewUrl}>
-                          Preview: {p.trackName} — {p.artistName}
+                          30s Preview: {p.trackName} — {p.artistName}
                         </option>
                       ))}
                     </select>

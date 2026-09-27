@@ -111,6 +111,10 @@ async function itunesPreviews(title: string, artist: string): Promise<PreviewCan
     .slice(0, 5);
 }
 
+import { downloadFullTrackAudio } from "@/lib/audio/download-track";
+
+export const maxDuration = 60;
+
 export async function GET(req: Request) {
   const auth = await requireAdminApi();
   if (!auth.ok) {
@@ -129,8 +133,21 @@ export async function GET(req: Request) {
 
   try {
     const meta = await spotifyMetadata(spotifyUrl);
-    const previews = await itunesPreviews(meta.title, meta.artist);
-    return NextResponse.json({ spotifyUrl, ...meta, previews });
+    const [fullAudio, previews] = await Promise.all([
+      downloadFullTrackAudio(meta.title, meta.artist),
+      itunesPreviews(meta.title, meta.artist),
+    ]);
+
+    const audioUrl = fullAudio.ok ? fullAudio.audioUrl : (previews[0]?.previewUrl ?? null);
+    const isFullTrack = fullAudio.ok;
+
+    return NextResponse.json({
+      spotifyUrl,
+      ...meta,
+      audioUrl,
+      isFullTrack,
+      previews,
+    });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Lookup failed" },
@@ -138,3 +155,4 @@ export async function GET(req: Request) {
     );
   }
 }
+
