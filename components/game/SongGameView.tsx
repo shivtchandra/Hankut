@@ -27,19 +27,22 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
 
-  function playSegment() {
+  const stopTimerRef = useRef<number | null>(null);
+
+  function playSegment(clip = level) {
     if (!audioRef.current) {
       audioRef.current = new Audio(payload.audioUrl);
     }
     const audio = audioRef.current;
-    audio.currentTime = payload.startSeconds ?? 0;
+    if (stopTimerRef.current) window.clearTimeout(stopTimerRef.current);
+    audio.currentTime = payload.clipStarts?.[clip] ?? payload.startSeconds ?? 0;
     audio.play().catch(() => {});
     setIsPlaying(true);
 
-    setTimeout(() => {
+    stopTimerRef.current = window.setTimeout(() => {
       audio.pause();
       setIsPlaying(false);
-    }, currentDuration * 1000);
+    }, (segments[clip] || 1) * 1000);
   }
 
   function submitGuess() {
@@ -100,7 +103,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
             <button
               type="button"
               className="audio-play-btn"
-              onClick={playSegment}
+              onClick={() => playSegment()}
               disabled={isPlaying}
             >
               <IconPlay size={16} style={{ marginRight: 6 }} />
@@ -110,12 +113,17 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
           <div className="duration-steps">
             {segments.map((dur, idx) => (
-              <span
+              <button
                 key={idx}
+                type="button"
                 className={`dur-chip ${idx <= level ? "active" : ""}`}
+                disabled={idx > level}
+                onClick={() => playSegment(idx)}
+                aria-label={`${idx + 1}번 구간 ${dur}초 듣기`}
+                style={{ border: "none", font: "inherit", cursor: idx <= level ? "pointer" : "default" }}
               >
                 {dur}초
-              </span>
+              </button>
             ))}
           </div>
         </div>

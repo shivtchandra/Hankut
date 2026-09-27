@@ -110,6 +110,7 @@ export type SongPayload = {
   audioUrl: string;
   segments: number[]; // e.g. [1, 2, 4, 7, 12]
   startSeconds?: number; // where each reveal begins in the clip
+  clipStarts?: number[]; // per-clip start points; overrides startSeconds when set
   dramaTitle?: string;
   /** Full-track link (e.g. Spotify) shown after the answer is revealed. */
   sourceUrl?: string;

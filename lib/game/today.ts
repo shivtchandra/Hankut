@@ -238,10 +238,15 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
 
   if (type === "song") {
     const audioStep = steps.find((s: { step_type: string }) => s.step_type === "audio");
-    const audioSegments = steps
+    const audioSteps = steps
       .filter((s: { step_type: string }) => s.step_type === "audio")
-      .sort((a: { step_number: number }, b: { step_number: number }) => a.step_number - b.step_number)
-      .map((s: { metadata?: { duration?: number } }) => s.metadata?.duration ?? 2);
+      .sort((a: { step_number: number }, b: { step_number: number }) => a.step_number - b.step_number);
+    const audioSegments = audioSteps.map(
+      (s: { metadata?: { duration?: number } }) => s.metadata?.duration ?? 2,
+    );
+    const clipStarts = audioSteps.map((s: { metadata?: { start_seconds?: unknown } }) =>
+      Number(s.metadata?.start_seconds),
+    );
 
     const payload: SongPayload = {
       id: puzzle.id,
@@ -252,6 +257,8 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
       audioUrl: audioStep?.asset_url ?? "",
       segments: audioSegments.length > 0 ? audioSegments : [1, 2, 4, 7, 12],
       startSeconds: Number(puzzle.metadata?.start_seconds ?? 0),
+      clipStarts:
+        clipStarts.length > 0 && clipStarts.every(Number.isFinite) ? clipStarts : undefined,
       dramaTitle: puzzle.metadata?.drama_title,
       sourceUrl: puzzle.metadata?.source_url,
       aliases: answers.map((a: { answer_text: string }) => a.answer_text),

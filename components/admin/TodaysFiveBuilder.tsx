@@ -27,9 +27,17 @@ type SpotifyLookup = {
   previews: { trackName: string; artistName: string; previewUrl: string; storeUrl: string }[];
 };
 
-/** Cumulative reveal lengths (seconds) for the 5 song clips. */
-const SONG_SEGMENTS = [1, 2, 4, 7, 12];
-const SONG_CLIP_TOTAL = SONG_SEGMENTS[SONG_SEGMENTS.length - 1];
+type SongClip = { start: number; length: number };
+
+/** Default bit lengths (seconds) for the 5 song clips; each clip has its own start. */
+const DEFAULT_SONG_CLIPS: SongClip[] = [1, 2, 4, 7, 12].map((length) => ({ start: 0, length }));
+const SONG_CLIP_POINTS = [25, 20, 15, 10, 5];
+const SONG_CLIP_COLORS = ["#e11d48", "#f97316", "#eab308", "#22c55e", "#3b82f6"];
+
+function formatClock(seconds: number) {
+  const s = Math.max(seconds, 0);
+  return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0")}`;
+}
 type GameMode = "scene" | "song" | "chosung" | "connections" | "people";
 
 function diffColor(d: number) {
@@ -95,7 +103,8 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
   const [spotifyInput, setSpotifyInput] = useState("");
   const [spotifyLookup, setSpotifyLookup] = useState<SpotifyLookup | null>(null);
   const [lookingUpSpotify, setLookingUpSpotify] = useState(false);
-  const [songStart, setSongStart] = useState(0);
+  const [songClips, setSongClips] = useState<SongClip[]>(DEFAULT_SONG_CLIPS);
+  const [songTime, setSongTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const songAudioRef = useRef<HTMLAudioElement | null>(null);
   const songStopTimer = useRef<number | null>(null);
@@ -230,7 +239,7 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
       setSpotifyLookup(lookup);
       setSongTitle(lookup.title);
       setArtistName(lookup.artist);
-      setSongStart(0);
+      setSongClips(DEFAULT_SONG_CLIPS);
       if (lookup.previews[0]) {
         setAudioUrl(lookup.previews[0].previewUrl);
         setNotice({ type: "ok", msg: "Imported from Spotify — 30s preview loaded. Pick a start point." });
@@ -244,13 +253,18 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
     }
   }
 
-  function playSongClip(seconds: number) {
+  function playSongClip(index: number) {
     const audio = songAudioRef.current;
-    if (!audio) return;
+    const clip = songClips[index];
+    if (!audio || !clip) return;
     if (songStopTimer.current) window.clearTimeout(songStopTimer.current);
-    audio.currentTime = songStart;
+    audio.currentTime = clip.start;
     void audio.play();
-    songStopTimer.current = window.setTimeout(() => audio.pause(), seconds * 1000);
+    songStopTimer.current = window.setTimeout(() => audio.pause(), clip.length * 1000);
+  }
+
+  function updateSongClip(index: number, patch: Partial<SongClip>) {
+    setSongClips((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
   }
 
   async function handleBulkFiles(files: FileList) {
@@ -331,8 +345,9 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
           artistKr: artistName,
           dramaTitle: selectedDrama?.title_kr,
           audioUrl,
-          startSeconds: songStart,
-          segments: SONG_SEGMENTS,
+          startSeconds: songClips[0].start,
+          segments: songClips.map((c) => c.length),
+          clipStarts: songClips.map((c) => c.start),
           aliases: [],
           gameDate: targetDate,
           publish,
@@ -1064,61 +1079,162 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                   src={audioUrl}
                   controls
                   onLoadedMetadata={(e) => setAudioDuration(e.currentTarget.duration || 0)}
+                  onTimeUpdate={(e) => setSongTime(e.currentTarget.currentTime)}
                   style={{ display: "block", marginTop: 8, width: "100%" }}
                 />
-                <label style={{ fontWeight: 600, fontSize: 13, display: "block", margin: "12px 0 6px" }}>
-                  Clip start point: {songStart.toFixed(1)}s
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(audioDuration - SONG_CLIP_TOTAL, 0)}
-                  step={0.5}
-                  value={songStart}
-                  onChange={(e) => setSongStart(Number(e.target.value))}
-                  style={{ width: "100%" }}
-                />
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)" }}>
-                  All 5 clips play from here. Click a clip below to hear it.
-                </p>
               </div>
             )}
           </div>
 
           <div>
-            <label style={{ fontWeight: 600, fontSize: 13, display: "block", marginBottom: 8 }}>
-              5 Progressive Audio Clips (Auto-cut intervals)
+            <label style={{ fontWeight: 600, fontSize: 13, display: "block", marginBottom: 4 }}>
+              5 Audio Clips — pick any bit of the song for each
             </label>
-            <div style={{ display: "flex", gap: 10 }}>
-              {[
-                { label: "Clip 1", sec: "1s Sample", pts: "25 pts" },
-                { label: "Clip 2", sec: "2s Sample", pts: "20 pts" },
-                { label: "Clip 3", sec: "4s Sample", pts: "15 pts" },
-                { label: "Clip 4", sec: "7s Sample", pts: "10 pts" },
-                { label: "Clip 5", sec: "12s Sample", pts: "5 pts" },
-              ].map((c, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  disabled={!audioUrl}
-                  onClick={() => playSongClip(SONG_SEGMENTS[i])}
-                  title={audioUrl ? `Play ${c.sec.toLowerCase()} from ${songStart}s` : "Add audio first"}
+            <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--muted)" }}>
+              Play the track above, pause where a clip should begin, then hit &quot;Use playhead&quot;.
+              Click the timeline to jump around.
+            </p>
+
+            {audioUrl && audioDuration > 0 && (
+              <div
+                role="presentation"
+                onClick={(e) => {
+                  const audio = songAudioRef.current;
+                  if (!audio) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  audio.currentTime = ((e.clientX - rect.left) / rect.width) * audioDuration;
+                }}
+                style={{
+                  position: "relative",
+                  height: 44,
+                  marginBottom: 12,
+                  background: "var(--paper-soft)",
+                  border: "1px solid var(--line)",
+                  borderRadius: "var(--radius-sm)",
+                  cursor: "pointer",
+                  overflow: "hidden",
+                }}
+              >
+                {songClips.map((clip, i) => (
+                  <div
+                    key={i}
+                    title={`Clip ${i + 1}: ${formatClock(clip.start)} – ${formatClock(clip.start + clip.length)}`}
+                    style={{
+                      position: "absolute",
+                      top: 4 + i * 7,
+                      height: 6,
+                      left: `${(clip.start / audioDuration) * 100}%`,
+                      width: `${Math.max((clip.length / audioDuration) * 100, 0.5)}%`,
+                      background: SONG_CLIP_COLORS[i],
+                      borderRadius: 3,
+                    }}
+                  />
+                ))}
+                <div
                   style={{
-                    flex: 1,
-                    padding: "10px",
-                    background: "var(--paper-soft)",
-                    borderRadius: "var(--radius-sm)",
-                    textAlign: "center",
-                    border: "1px solid var(--line)",
-                    cursor: audioUrl ? "pointer" : "default",
-                    font: "inherit",
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    left: `${(songTime / audioDuration) * 100}%`,
+                    width: 2,
+                    background: "var(--ink)",
                   }}
-                >
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{audioUrl ? `▶ ${c.label}` : c.label}</div>
-                  <strong style={{ fontSize: 14, display: "block", margin: "2px 0" }}>{c.sec}</strong>
-                  <span style={{ fontSize: 11, color: "var(--green)" }}>{c.pts}</span>
-                </button>
-              ))}
+                />
+              </div>
+            )}
+
+            <div style={{ display: "grid", gap: 8 }}>
+              {songClips.map((clip, i) => {
+                const overflows = audioDuration > 0 && clip.start + clip.length > audioDuration + 0.05;
+                const numberInput = {
+                  width: 76,
+                  padding: "6px 8px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--line)",
+                  fontSize: 13,
+                };
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "8px 10px",
+                      background: "var(--paper-soft)",
+                      border: `1px solid ${overflows ? "var(--accent)" : "var(--line)"}`,
+                      borderRadius: "var(--radius-sm)",
+                      fontSize: 13,
+                    }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: 4, background: SONG_CLIP_COLORS[i] }} />
+                    <strong style={{ minWidth: 48 }}>Clip {i + 1}</strong>
+                    <span style={{ fontSize: 11, color: "var(--green)", minWidth: 44 }}>
+                      {SONG_CLIP_POINTS[i]} pts
+                    </span>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      Start (s)
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.1}
+                        value={clip.start}
+                        onChange={(e) => updateSongClip(i, { start: Math.max(Number(e.target.value) || 0, 0) })}
+                        style={numberInput}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={!audioUrl}
+                      onClick={() => updateSongClip(i, { start: Math.round(songTime * 10) / 10 })}
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--paper)",
+                        fontSize: 12,
+                        cursor: audioUrl ? "pointer" : "default",
+                      }}
+                    >
+                      Use playhead ({formatClock(songTime)})
+                    </button>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      Length (s)
+                      <input
+                        type="number"
+                        min={0.5}
+                        step={0.5}
+                        value={clip.length}
+                        onChange={(e) => updateSongClip(i, { length: Math.max(Number(e.target.value) || 0.5, 0.5) })}
+                        style={numberInput}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={!audioUrl}
+                      onClick={() => playSongClip(i)}
+                      style={{
+                        marginLeft: "auto",
+                        padding: "6px 12px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "none",
+                        background: audioUrl ? "var(--ink)" : "var(--line)",
+                        color: "var(--paper)",
+                        fontSize: 12,
+                        cursor: audioUrl ? "pointer" : "default",
+                      }}
+                    >
+                      ▶ {formatClock(clip.start)}–{formatClock(clip.start + clip.length)}
+                    </button>
+                    {overflows && (
+                      <span style={{ width: "100%", fontSize: 11, color: "var(--accent)" }}>
+                        Runs past the end of the track ({formatClock(audioDuration)}).
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

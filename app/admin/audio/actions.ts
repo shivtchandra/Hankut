@@ -27,6 +27,11 @@ export type SongPuzzleDraft = {
   publish: boolean;
   /** Where players can hear the full track (e.g. Spotify), shown on reveal. */
   sourceUrl?: string;
+  /**
+   * Per-clip start points. When set, each clip is its own bit of the song
+   * (segments[i] is that clip's length) instead of a longer replay from startSeconds.
+   */
+  clipStarts?: number[];
 };
 
 export type SavedSongPuzzle = {
@@ -63,6 +68,12 @@ function validate(draft: SongPuzzleDraft): string[] {
     errors.push("Provide exactly 5 reveal lengths.");
   } else if (draft.segments.some((s) => !Number.isFinite(s) || s <= 0)) {
     errors.push("Every reveal length must be longer than 0 seconds.");
+  } else if (draft.clipStarts) {
+    if (draft.clipStarts.length !== draft.segments.length) {
+      errors.push("Every clip needs a start point.");
+    } else if (draft.clipStarts.some((s) => !Number.isFinite(s) || s < 0)) {
+      errors.push("Clip start points must be zero or more seconds.");
+    }
   } else if (draft.segments.some((s, i) => i > 0 && s <= draft.segments[i - 1])) {
     errors.push("Reveal lengths must increase from clip 1 to clip 5.");
   }
@@ -146,7 +157,12 @@ export async function saveSongPuzzle(
       step_number: index + 1,
       step_type: "audio",
       asset_url: draft.audioUrl,
-      metadata: { duration, start_seconds: startSeconds },
+      metadata: {
+        duration,
+        start_seconds: draft.clipStarts
+          ? Math.round(draft.clipStarts[index] * 10) / 10
+          : startSeconds,
+      },
       score_penalty: index * 5,
     })),
   );
