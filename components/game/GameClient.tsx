@@ -55,6 +55,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
   const [inviteLink, setInviteLink] = useState("");
   const finishedRef = useRef(false);
   const playIdRef = useRef<string | null>(null);
+  const startPlayPromiseRef = useRef<Promise<string | null> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -115,6 +116,7 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     setNotice("");
     finishedRef.current = false;
     playIdRef.current = null;
+    startPlayPromiseRef.current = null;
     setStreak(getStreak());
 
     const saved = getDailyGameState(game.gameDate);
@@ -126,22 +128,35 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     }
   }, [game.gameDate]);
 
-  const startPlay = useCallback(async () => {
-    if (playIdRef.current || finishedRef.current) return;
+  const startPlay = useCallback(() => {
+    if (playIdRef.current) return Promise.resolve(playIdRef.current);
+    if (startPlayPromiseRef.current) return startPlayPromiseRef.current;
+    if (finishedRef.current) return Promise.resolve(null);
+
     const deviceId = getDeviceId();
-    if (!deviceId) return;
-    try {
-      const res = await fetch("/api/game/play", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dailyGameId: game.id, guestId: deviceId }),
-      });
-      if (res.ok) {
-        const data = await res.json() as { playId: string };
-        playIdRef.current = data.playId;
-      }
-    } catch {}
-  }, [game.id, game.scene.id]);
+    if (!deviceId) return Promise.resolve(null);
+
+    const promise = (async () => {
+      try {
+        const res = await fetch("/api/game/play", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dailyGameId: game.id, guestId: deviceId }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { playId?: string };
+          if (data.playId) {
+            playIdRef.current = data.playId;
+            return data.playId;
+          }
+        }
+      } catch {}
+      return null;
+    })();
+
+    startPlayPromiseRef.current = promise;
+    return promise;
+  }, [game.id]);
 
   useEffect(() => {
     frames.forEach((src) => {
@@ -160,22 +175,55 @@ export function GameClient({ game, dramas, todayDate }: Props) {
     finishedRef.current = true;
     const next = recordDailyPlay(game.gameDate);
     setStreak(next);
-    const pid = playIdRef.current;
-    if (pid) {
-      fetch("/api/game/play", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          playId: pid,
-          solved,
-          score: solved ? Math.max(25 - (attempts.length - 1) * 5, 5) : 0,
-          attempts: attempts.length,
-          stepsRevealed: frame,
-          completed: true,
-        }),
-      }).catch(() => {});
-    }
-  }, [finished, game.gameDate, solved, attempts.length, frame]);
+
+    const recordCompletion = async () => {
+      const deviceId = getDeviceId();
+      const score = solved ? Math.max(25 - (attempts.length - 1) * 5, 5) : 0;
+      const stepsRevealed = frame + 1; // 1 to 5 frames
+      const attemptsCount = attempts.length;
+
+      let pid = playIdRef.current;
+      if (!pid && startPlayPromiseRef.current) {
+        pid = await startPlayPromiseRef.current;
+      }
+
+      if (pid) {
+        await fetch("/api/game/play", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playId: pid,
+            solved,
+            score,
+            attempts: attemptsCount,
+            stepsRevealed,
+            completed: true,
+          }),
+        }).catch(() => {});
+      } else {
+        await fetch("/api/game/play", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dailyGameId: game.id,
+            guestId: deviceId,
+            solved,
+            score,
+            attempts: attemptsCount,
+            stepsRevealed,
+            completed: true,
+          }),
+        }).then(async (res) => {
+          if (res.ok) {
+            const data = (await res.json()) as { playId?: string };
+            if (data.playId) playIdRef.current = data.playId;
+          }
+        }).catch(() => {});
+      }
+    };
+
+    void recordCompletion();
+  }, [finished, game.gameDate, game.id, solved, attempts.length, frame]);
 
   // Save game progress to localStorage whenever attempts, solved, or frame changes
   useEffect(() => {

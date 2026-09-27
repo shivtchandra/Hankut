@@ -20,50 +20,113 @@ async function getAnalytics() {
   const db = await createSupabaseAdmin();
   const today = seoulDate();
 
-  // Per-game breakdown
-  const { data: gameRows } = await db.rpc("analytics_per_game" as never) as { data: GameRow[] | null };
+  // Query daily_games with plays
+  const { data: dailyGamesData } = await db
+    .from("daily_games")
+    .select(`
+      id, game_date,
+      scenes ( dramas ( title_en, title_kr ) ),
+      plays ( id, completed_at, solved, score, attempts, steps_revealed, guest_id, created_at, started_at )
+    `)
+    .in("status", ["published", "scheduled"])
+    .order("game_date", { ascending: false })
+    .limit(60);
 
-  // Fallback: direct query if RPC not available
-  let games: GameRow[] = gameRows ?? [];
-  if (!games.length) {
-    const { data } = await db
-      .from("daily_games")
-      .select(`
-        id, game_date,
-        scenes ( dramas ( title_en ) ),
-        plays ( id, completed_at, solved, score, steps_revealed, guest_id )
-      `)
-      .in("status", ["published", "scheduled"])
-      .order("game_date", { ascending: false })
-      .limit(60);
+  // Also query daily_sets with plays
+  const { data: dailySetsData } = await db
+    .from("daily_sets")
+    .select(`
+      id, game_date, title,
+      items:daily_set_items (
+        id, position,
+        puzzle:puzzles ( id, type, title, metadata ),
+        plays:plays ( id, completed_at, solved, score, attempts, steps_revealed, guest_id, created_at, started_at )
+      )
+    `)
+    .in("status", ["published", "scheduled"])
+    .order("game_date", { ascending: false })
+    .limit(60);
 
-    games = (data ?? []).map((row: any) => {
-      const drama = Array.isArray(row.scenes?.dramas) ? row.scenes.dramas[0] : row.scenes?.dramas;
-      const allPlays: any[] = Array.isArray(row.plays) ? row.plays : [];
-      const completedPlays = allPlays.filter((p: any) => p.completed_at);
-      const solvedPlays = allPlays.filter((p: any) => p.solved);
-      const scores = completedPlays.map((p: any) => p.score).filter(Boolean);
-      const frames = completedPlays.map((p: any) => p.steps_revealed).filter((v: any) => v != null);
-      const guestIds = new Set(allPlays.map((p: any) => p.guest_id).filter(Boolean));
-      return {
-        id: row.id,
-        game_date: row.game_date,
-        title_en: drama?.title_en ?? "—",
+  const gameMap = new Map<string, GameRow>();
+
+  for (const row of dailyGamesData ?? []) {
+    const rawScene: any = (row as any).scenes;
+    const scene = Array.isArray(rawScene) ? rawScene[0] : rawScene;
+    const drama = Array.isArray(scene?.dramas) ? scene.dramas[0] : scene?.dramas;
+    const allPlays: any[] = Array.isArray(row.plays) ? row.plays : [];
+    const completedPlays = allPlays.filter((p: any) => p.completed_at || p.solved || (p.attempts && p.attempts >= 5));
+    const solvedPlays = allPlays.filter((p: any) => Boolean(p.solved));
+    const scores = solvedPlays.map((p: any) => p.score).filter((s: any) => typeof s === "number" && s > 0);
+    const frames = completedPlays.map((p: any) => p.steps_revealed).filter((v: any) => v != null).map((v: number) => Math.max(v, 1));
+    const guestIds = new Set(allPlays.map((p: any) => p.guest_id).filter(Boolean));
+
+    gameMap.set(row.game_date, {
+      id: row.id,
+      game_date: row.game_date,
+      title_en: drama?.title_en || drama?.title_kr || "Scene Puzzle",
+      plays: allPlays.length,
+      completions: completedPlays.length,
+      solves: solvedPlays.length,
+      avg_score: scores.length ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : null,
+      avg_frames: frames.length ? Math.round((frames.reduce((a: number, b: number) => a + b, 0) / frames.length) * 10) / 10 : null,
+      unique_players: guestIds.size,
+    });
+  }
+
+  // Merge daily sets if not already in gameMap or if daily set has more plays
+  for (const st of dailySetsData ?? []) {
+    const items = (st.items ?? []) as Array<{
+      plays?: any[];
+      puzzle?: { id: string; type: string; title: string; metadata?: Record<string, unknown> } | Array<{ id: string; type: string; title: string; metadata?: Record<string, unknown> }>;
+    }>;
+
+    const allPlays: any[] = items.flatMap((it) => (Array.isArray(it.plays) ? it.plays : []));
+    if (allPlays.length === 0 && gameMap.has(st.game_date)) continue;
+
+    const songItem = items.find((it) => {
+      const p = Array.isArray(it.puzzle) ? it.puzzle[0] : it.puzzle;
+      return p?.type === "song";
+    });
+    const chosen = songItem || items[0];
+    const p = Array.isArray(chosen?.puzzle) ? chosen.puzzle[0] : chosen?.puzzle;
+    const meta = (p?.metadata ?? {}) as Record<string, unknown>;
+    const title = p?.title ? `${p.title}${meta.artist_en ? ` (${meta.artist_en})` : ""}` : st.title || "Daily Set";
+
+    const completedPlays = allPlays.filter((pl: any) => pl.completed_at || pl.solved || (pl.attempts && pl.attempts >= 5));
+    const solvedPlays = allPlays.filter((pl: any) => Boolean(pl.solved));
+    const scores = solvedPlays.map((pl: any) => pl.score).filter((s: any) => typeof s === "number" && s > 0);
+    const frames = completedPlays.map((pl: any) => pl.steps_revealed).filter((v: any) => v != null).map((v: number) => Math.max(v, 1));
+    const guestIds = new Set(allPlays.map((pl: any) => pl.guest_id).filter(Boolean));
+
+    const existing = gameMap.get(st.game_date);
+    if (!existing) {
+      gameMap.set(st.game_date, {
+        id: st.id,
+        game_date: st.game_date,
+        title_en: title,
         plays: allPlays.length,
         completions: completedPlays.length,
         solves: solvedPlays.length,
         avg_score: scores.length ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : null,
         avg_frames: frames.length ? Math.round((frames.reduce((a: number, b: number) => a + b, 0) / frames.length) * 10) / 10 : null,
         unique_players: guestIds.size,
-      };
-    });
+      });
+    } else if (allPlays.length > 0) {
+      existing.plays += allPlays.length;
+      existing.completions += completedPlays.length;
+      existing.solves += solvedPlays.length;
+      existing.unique_players = Math.max(existing.unique_players, guestIds.size);
+    }
   }
 
+  const games: GameRow[] = Array.from(gameMap.values()).sort((a, b) => b.game_date.localeCompare(a.game_date));
+
   // Daily trend: last 14 days
+  const fourteenDaysAgoIso = new Date(Date.now() - 14 * 86400000).toISOString();
   const { data: trendRaw } = await db
     .from("plays")
-    .select("created_at")
-    .gte("created_at", new Date(Date.now() - 14 * 86400000).toISOString());
+    .select("created_at, started_at")
+    .or(`created_at.gte.${fourteenDaysAgoIso},started_at.gte.${fourteenDaysAgoIso}`);
 
   const trendMap: Record<string, number> = {};
   for (let i = 13; i >= 0; i--) {
@@ -73,7 +136,8 @@ async function getAnalytics() {
     trendMap[key] = 0;
   }
   for (const row of trendRaw ?? []) {
-    const key = (row as any).created_at?.slice(0, 10);
+    const dateStr = (row as any).started_at || (row as any).created_at;
+    const key = dateStr?.slice(0, 10);
     if (key && key in trendMap) trendMap[key]++;
   }
   const trend: TrendRow[] = Object.entries(trendMap).map(([day, plays]) => ({ day, plays }));
@@ -82,9 +146,9 @@ async function getAnalytics() {
   const totalPlays = games.reduce((s, g) => s + g.plays, 0);
   const totalCompletions = games.reduce((s, g) => s + g.completions, 0);
   const totalSolves = games.reduce((s, g) => s + g.solves, 0);
-  const allScores = games.filter((g) => g.avg_score != null);
-  const globalAvgScore = allScores.length
-    ? Math.round(allScores.reduce((s, g) => s + (g.avg_score ?? 0), 0) / allScores.length)
+  const solvedGames = games.filter((g) => g.solves > 0 && g.avg_score != null);
+  const globalAvgScore = solvedGames.length
+    ? Math.round(solvedGames.reduce((s, g) => s + (g.avg_score ?? 0), 0) / solvedGames.length)
     : null;
 
   const sevenDaysAgo = new Date(`${today}T00:00:00+09:00`);

@@ -4,28 +4,50 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { dailyGameId, dailySetItemId, challengeId, guestId } = body;
+    const {
+      dailyGameId,
+      dailySetItemId,
+      challengeId,
+      guestId,
+      completed,
+      solved,
+      score,
+      attempts,
+      stepsRevealed,
+      timeSeconds,
+    } = body;
 
-    if (!dailyGameId) {
-      return NextResponse.json({ error: "dailyGameId required" }, { status: 400 });
+    if (!dailyGameId && !dailySetItemId && !challengeId) {
+      return NextResponse.json({ error: "Game target required" }, { status: 400 });
     }
 
     const db = await createSupabaseAdmin();
 
+    const insertData: Record<string, unknown> = {
+      daily_game_id: dailyGameId ?? null,
+      daily_set_item_id: dailySetItemId ?? null,
+      challenge_id: challengeId ?? null,
+      guest_id: guestId ?? null,
+      started_at: new Date().toISOString(),
+    };
+
+    if (completed) {
+      insertData.completed_at = new Date().toISOString();
+      if (solved !== undefined) insertData.solved = Boolean(solved);
+      if (score !== undefined) insertData.score = score;
+      if (attempts !== undefined) insertData.attempts = attempts;
+      if (stepsRevealed !== undefined) insertData.steps_revealed = stepsRevealed;
+      if (timeSeconds !== undefined) insertData.time_seconds = timeSeconds;
+    }
+
     const { data, error } = await db
       .from("plays")
-      .insert({
-        daily_game_id: dailyGameId,
-        daily_set_item_id: dailySetItemId ?? null,
-        challenge_id: challengeId ?? null,
-        guest_id: guestId ?? null,
-        started_at: new Date().toISOString(),
-      })
+      .insert(insertData)
       .select("id")
       .single();
 
     if (error || !data) {
-      return NextResponse.json({ error: "Failed to create play" }, { status: 500 });
+      return NextResponse.json({ error: error?.message ?? "Failed to create play" }, { status: 500 });
     }
 
     return NextResponse.json({ playId: data.id });
@@ -48,12 +70,15 @@ export async function PATCH(req: NextRequest) {
     const updates: Record<string, unknown> = {};
     if (stepsRevealed !== undefined) updates.steps_revealed = stepsRevealed;
     if (timeSeconds !== undefined) updates.time_seconds = timeSeconds;
-    if (solved !== undefined) updates.solved = solved;
+    if (solved !== undefined) updates.solved = Boolean(solved);
     if (score !== undefined) updates.score = score;
     if (attempts !== undefined) updates.attempts = attempts;
     if (completed) updates.completed_at = new Date().toISOString();
 
-    await db.from("plays").update(updates).eq("id", playId);
+    const { error } = await db.from("plays").update(updates).eq("id", playId);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
