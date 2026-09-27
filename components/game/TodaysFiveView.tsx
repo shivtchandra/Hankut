@@ -91,23 +91,28 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
 
   return (
     <div className="todays-five-runner">
-      <div className="todays-five-nav">
-        <div className="t5-step-bar">
-          {todaysFive.items.map((item, idx) => {
-            const active = idx === currentIndex;
-            const done = idx < currentIndex;
-            return (
-              <div
-                key={idx}
-                className={`t5-step ${active ? "active" : ""} ${done ? "done" : ""}`}
-              >
-                <span>0{idx + 1}</span>
-                <small>{puzzleTypeLabel(item.type, locale)}</small>
-              </div>
-            );
-          })}
+      {totalGames > 1 && (
+        <div className="todays-five-nav">
+          <div
+            className="t5-step-bar"
+            style={{ gridTemplateColumns: `repeat(${totalGames}, 1fr)` }}
+          >
+            {todaysFive.items.map((item, idx) => {
+              const active = idx === currentIndex;
+              const done = idx < currentIndex;
+              return (
+                <div
+                  key={idx}
+                  className={`t5-step ${active ? "active" : ""} ${done ? "done" : ""}`}
+                >
+                  <span>0{idx + 1}</span>
+                  <small>{puzzleTypeLabel(item.type, locale)}</small>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="t5-active-game">
         {currentItem.type === "scene" && (

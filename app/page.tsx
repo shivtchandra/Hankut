@@ -5,10 +5,11 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { GamePage } from "@/components/game/GamePage";
+import { TodaysFiveView } from "@/components/game/TodaysFiveView";
 import { ViewerClockSync } from "@/components/game/ViewerClockSync";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { getTodayGame } from "@/lib/game/today";
+import { getTodayGame, getTodaysFive } from "@/lib/game/today";
 import {
   VIEWER_TZ_COOKIE,
   isValidGameDate,
@@ -58,7 +59,11 @@ export default async function Home({ searchParams }: Props) {
     redirect("/");
   }
 
-  const { game, dramas, source } = await getTodayGame(date || today);
+  const targetDate = date || today;
+  const [{ game, dramas, source }, todaysFive] = await Promise.all([
+    getTodayGame(targetDate),
+    getTodaysFive(targetDate),
+  ]);
 
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
@@ -67,8 +72,23 @@ export default async function Home({ searchParams }: Props) {
     year: "numeric",
     timeZone: "Asia/Seoul",
   })
-    .format(new Date(`${game.gameDate}T12:00:00+09:00`))
+    .format(new Date(`${targetDate}T12:00:00+09:00`))
     .toUpperCase();
+
+  if (todaysFive && todaysFive.items.length > 0) {
+    return (
+      <main className="game-page">
+        <ViewerClockSync />
+        <SiteNav />
+        <section className="play-stage">
+          <div className="game-stage-container">
+            <TodaysFiveView todaysFive={todaysFive} dramas={dramas} />
+          </div>
+        </section>
+        <SiteFooter />
+      </main>
+    );
+  }
 
   if (source === "demo") {
     return (

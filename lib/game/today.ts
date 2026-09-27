@@ -248,21 +248,34 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
       Number(s.metadata?.start_seconds),
     );
 
+    const rawAliases = answers.map((a: { answer_text: string }) => a.answer_text);
+    const titleKr = entityMeta.title_kr ?? puzzle.title;
+    const titleEn = entityMeta.title_en ?? puzzle.metadata?.title_en ?? "";
+    const artistKr = puzzle.metadata?.artist_kr ?? "";
+    const artistEn = puzzle.metadata?.artist_en ?? "";
+    const dramaTitle = puzzle.metadata?.drama_title;
+
+    const allAliases = Array.from(
+      new Set(
+        [titleKr, titleEn, artistKr, artistEn, dramaTitle, ...rawAliases].filter(Boolean) as string[],
+      ),
+    );
+
     const payload: SongPayload = {
       id: puzzle.id,
-      titleKr: entityMeta.title_kr ?? puzzle.title,
-      titleEn: entityMeta.title_en ?? puzzle.metadata?.title_en ?? "",
-      artistKr: puzzle.metadata?.artist_kr ?? "",
-      artistEn: puzzle.metadata?.artist_en ?? "",
+      titleKr,
+      titleEn,
+      artistKr,
+      artistEn,
       audioUrl: audioStep?.asset_url ?? "",
       spotifyTrackId: puzzle.metadata?.spotify_track_id ?? undefined,
       segments: audioSegments.length > 0 ? audioSegments : [1, 2, 4, 7, 12],
       startSeconds: Number(puzzle.metadata?.start_seconds ?? 0),
       clipStarts:
         clipStarts.length > 0 && clipStarts.every(Number.isFinite) ? clipStarts : undefined,
-      dramaTitle: puzzle.metadata?.drama_title,
+      dramaTitle,
       sourceUrl: puzzle.metadata?.source_url,
-      aliases: answers.map((a: { answer_text: string }) => a.answer_text),
+      aliases: allAliases,
       clues: mapClues(clues),
     };
     return { type: "song", payload };
@@ -343,10 +356,10 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!configured) return DEMO_TODAYS_FIVE ?? null;
+  if (!configured) return null;
 
   try {
-    const supabase = await createSupabaseServer();
+    const supabase = createPublicSupabase();
     const gameDate = resolveGameDate(targetDate);
 
     const { data: setRow } = await supabase
@@ -356,7 +369,7 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
       .eq("status", "published")
       .maybeSingle();
 
-    if (!setRow) return DEMO_TODAYS_FIVE ?? null;
+    if (!setRow) return null;
 
     const { data: items } = await supabase
       .from("daily_set_items")
