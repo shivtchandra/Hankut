@@ -1752,6 +1752,8 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
 .search-wrap {
   display: flex;
   width: 100%;
