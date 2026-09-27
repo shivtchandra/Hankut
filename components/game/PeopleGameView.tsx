@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { matchesAlias } from "@/lib/game/normalization";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { localizeClueLabel } from "@/lib/i18n/dictionary";
 import { IconLock, IconPeople, IconUnlock } from "@/components/icons/Icons";
 import type { PeoplePayload } from "@/types/game";
 
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export function PeopleGameView({ payload, onSolve, onFail }: Props) {
+  const { locale, t } = useLocale();
   const frames = payload.frames;
   const [frame, setFrame] = useState(0);
   const [guess, setGuess] = useState("");
@@ -25,6 +28,9 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
 
+  const displayTitle = locale === "en" && payload.nameEn ? payload.nameEn : payload.nameKr;
+  const subTitle = locale === "en" ? payload.nameKr : payload.nameEn;
+
   function submitGuess() {
     if (finished || !guess.trim()) return;
 
@@ -36,7 +42,7 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
     if (isCorrect) {
       setSolved(true);
-      setNotice("정답입니다!");
+      setNotice(t("correct"));
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
@@ -44,9 +50,17 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
     if (nextAttempts.length < 5) {
       setFrame((f) => Math.min(f + 1, frames.length - 1));
-      setNotice("틀렸습니다! 이미지가 조금 더 밝혀집니다.");
+      setNotice(
+        locale === "ko"
+          ? "틀렸습니다! 이미지가 조금 더 밝혀집니다."
+          : "Incorrect! The image reveals slightly more."
+      );
     } else {
-      setNotice(`아쉽네요. 정답은 "${payload.nameKr}" 입니다.`);
+      setNotice(
+        locale === "ko"
+          ? `아쉽네요. 정답은 "${payload.nameKr}" 입니다.`
+          : `Game over. The answer was "${displayTitle}".`
+      );
       onFail?.();
     }
   }
@@ -79,7 +93,7 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
           <div className="scene-hud">
             <span>
               <IconPeople size={14} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
-              인물 단계 {frame + 1} / 5
+              {locale === "ko" ? `인물 단계 ${frame + 1} / 5` : `Person step ${frame + 1} / 5`}
             </span>
             <span>{payload.category}</span>
           </div>
@@ -88,8 +102,8 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">누구지?</span>
-          <h2>사진 속 인물의 이름을 맞혀보세요</h2>
+          <span className="eyebrow">{t("peopleTitle")}</span>
+          <h2>{t("whatPeople")}</h2>
         </div>
 
         <div className="search-wrap">
@@ -97,11 +111,11 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitGuess()}
-            placeholder="인물 이름을 입력하세요 (예: 박보검, 아이유)"
+            placeholder={t("peoplePlaceholder")}
             disabled={finished}
           />
           <button type="button" onClick={submitGuess} disabled={!guess.trim() || finished}>
-            제출
+            {t("submit")}
           </button>
         </div>
 
@@ -120,10 +134,16 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
                 onClick={() => useClue(clue.id)}
               >
                 <div className="clue-header">
-                  <span>{clue.label}</span>
+                  <span>{localizeClueLabel(clue.label, locale)}</span>
                   {used ? <IconUnlock size={14} /> : <IconLock size={14} />}
                 </div>
-                <strong>{used ? clue.value : unlocked ? "힌트 열기" : "잠김"}</strong>
+                <strong>
+                  {used
+                    ? clue.value
+                    : unlocked
+                    ? (locale === "ko" ? "힌트 열기" : "Reveal hint")
+                    : (locale === "ko" ? "잠김" : "Locked")}
+                </strong>
               </button>
             );
           })}
@@ -131,9 +151,9 @@ export function PeopleGameView({ payload, onSolve, onFail }: Props) {
 
         {finished && (
           <div className="result-card">
-            <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
-            <h3>{payload.nameKr}</h3>
-            <p>{payload.nameEn} ({payload.category})</p>
+            <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
+            <h3>{displayTitle}</h3>
+            <p>{subTitle} ({payload.category})</p>
           </div>
         )}
 

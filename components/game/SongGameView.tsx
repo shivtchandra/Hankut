@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { matchesAlias } from "@/lib/game/normalization";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { localizeClueLabel } from "@/lib/i18n/dictionary";
 import { IconCheck, IconLock, IconMusic, IconPlay, IconUnlock } from "@/components/icons/Icons";
 import type { SongPayload } from "@/types/game";
 
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export function SongGameView({ payload, onSolve, onFail }: Props) {
+  const { locale, t } = useLocale();
   const segments = payload.segments || [1, 2, 4, 7, 12];
   const [level, setLevel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -33,6 +36,9 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
   const currentDuration = segments[level] || 1;
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
+
+  const displayTitle = locale === "en" && payload.titleEn ? payload.titleEn : payload.titleKr;
+  const displayArtist = locale === "en" && payload.artistEn ? payload.artistEn : payload.artistKr;
 
   function playSegment(clip = level) {
     if (stopTimerRef.current) window.clearTimeout(stopTimerRef.current);
@@ -79,17 +85,26 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
     if (isCorrect) {
       setSolved(true);
-      setNotice("정답입니다!");
+      setNotice(t("correct"));
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
     }
 
     if (nextAttempts.length < 5) {
+      const nextDur = segments[Math.min(level + 1, segments.length - 1)];
       setLevel((l) => Math.min(l + 1, segments.length - 1));
-      setNotice(`오답입니다. 다음 오디오 구간(${segments[Math.min(level + 1, segments.length - 1)]}초)이 해금되었습니다.`);
+      setNotice(
+        locale === "ko"
+          ? `오답입니다. 다음 오디오 구간(${nextDur}초)이 해금되었습니다.`
+          : `Incorrect. Next clip (${nextDur}s) unlocked.`
+      );
     } else {
-      setNotice(`오답입니다. 정답은 "${payload.titleKr} - ${payload.artistKr}" 입니다.`);
+      setNotice(
+        locale === "ko"
+          ? `오답입니다. 정답은 "${payload.titleKr} - ${payload.artistKr}" 입니다.`
+          : `Game over. The answer was "${displayTitle} - ${displayArtist}".`
+      );
       onFail?.();
     }
   }
@@ -106,7 +121,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
         <div className={`audio-card ${isPlaying ? "playing" : ""}`}>
           <div className="audio-badge">
             <IconMusic size={14} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
-            오늘의 노래
+            {t("todaySong")}
           </div>
 
           {/* Spotify embed (hidden iframe — audio only) */}
@@ -143,7 +158,7 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
               disabled={isPlaying}
             >
               <IconPlay size={16} style={{ marginRight: 6 }} />
-              {isPlaying ? "재생 중..." : `${currentDuration}초 듣기`}
+              {isPlaying ? t("playing") : (locale === "ko" ? `${currentDuration}초 듣기` : `Listen ${currentDuration}s`)}
             </button>
           </div>
 
@@ -155,10 +170,10 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
                 className={`dur-chip ${idx <= level ? "active" : ""}`}
                 disabled={idx > level}
                 onClick={() => playSegment(idx)}
-                aria-label={`${idx + 1}번 구간 ${dur}초 듣기`}
+                aria-label={locale === "ko" ? `${idx + 1}번 구간 ${dur}초 듣기` : `Listen segment ${idx + 1} (${dur}s)`}
                 style={{ border: "none", font: "inherit", cursor: idx <= level ? "pointer" : "default" }}
               >
-                {dur}초
+                {dur}{locale === "ko" ? "초" : "s"}
               </button>
             ))}
           </div>
@@ -167,8 +182,8 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">오늘의 노래</span>
-          <h2>이 노래의 제목이나 가수를 맞혀보세요</h2>
+          <span className="eyebrow">{t("todaySong")}</span>
+          <h2>{t("whatSong")}</h2>
         </div>
 
         <div className="search-wrap">
@@ -176,11 +191,11 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitGuess()}
-            placeholder="노래 제목 또는 가수 이름을 입력하세요"
+            placeholder={t("songPlaceholder")}
             disabled={finished}
           />
           <button type="button" onClick={submitGuess} disabled={!guess.trim() || finished}>
-            제출
+            {t("submit")}
           </button>
         </div>
 
@@ -199,10 +214,16 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
                 onClick={() => useClue(clue.id)}
               >
                 <div className="clue-header">
-                  <span>{clue.label}</span>
+                  <span>{localizeClueLabel(clue.label, locale)}</span>
                   {used ? <IconUnlock size={14} /> : <IconLock size={14} />}
                 </div>
-                <strong>{used ? clue.value : unlocked ? "힌트 열기" : "잠김"}</strong>
+                <strong>
+                  {used
+                    ? clue.value
+                    : unlocked
+                    ? (locale === "ko" ? "힌트 열기" : "Reveal hint")
+                    : (locale === "ko" ? "잠김" : "Locked")}
+                </strong>
               </button>
             );
           })}
@@ -210,12 +231,12 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
 
         {finished && (
           <div className="result-card">
-            <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
-            <h3>{payload.titleKr}</h3>
-            <p>{payload.artistKr} {payload.dramaTitle ? `(${payload.dramaTitle})` : ""}</p>
+            <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
+            <h3>{displayTitle}</h3>
+            <p>{displayArtist} {payload.dramaTitle ? `(${payload.dramaTitle})` : ""}</p>
             {payload.sourceUrl && (
               <a href={payload.sourceUrl} target="_blank" rel="noopener noreferrer">
-                Spotify에서 전체 듣기 ↗
+                {locale === "ko" ? "Spotify에서 전체 듣기 ↗" : "Listen full track on Spotify ↗"}
               </a>
             )}
           </div>

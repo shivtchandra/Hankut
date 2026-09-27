@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [solvedGroups, setSolvedGroups] = useState<ConnectionGroup[]>([]);
   const [mistakesRemaining, setMistakesRemaining] = useState<number>(4);
@@ -55,7 +55,11 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
         const nextSolved = [...solvedGroups, matchedGroup];
         setSolvedGroups(nextSolved);
         setSelectedIds([]);
-        setNotice(`정답! "${matchedGroup.label}" 연결고리를 찾았습니다.`);
+        setNotice(
+          locale === "ko"
+            ? `정답! "${matchedGroup.label}" 연결고리를 찾았습니다.`
+            : `Correct! Group "${matchedGroup.label}" found.`
+        );
 
         if (nextSolved.length === 4) {
           const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -75,9 +79,17 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
       const hasThreeMatch = Object.values(groupCounts).includes(3);
 
       if (hasThreeMatch) {
-        setNotice("아쉽습니다! 1개만 다른 그룹입니다.");
+        setNotice(
+          locale === "ko"
+            ? "아쉽습니다! 1개만 다른 그룹입니다."
+            : "One away! Only 1 item is from a different group."
+        );
       } else {
-        setNotice("틀렸습니다! 다시 시도해보세요.");
+        setNotice(
+          locale === "ko"
+            ? "틀렸습니다! 다시 시도해보세요."
+            : "Incorrect! Try again."
+        );
       }
 
       if (nextMistakes <= 0) {

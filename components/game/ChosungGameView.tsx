@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { matchesAlias, matchesChosung } from "@/lib/game/normalization";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { localizeClueLabel } from "@/lib/i18n/dictionary";
 import { IconHangul, IconLock, IconUnlock } from "@/components/icons/Icons";
 import type { ChosungPayload } from "@/types/game";
 
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export function ChosungGameView({ payload, onSolve, onFail }: Props) {
+  const { locale, t } = useLocale();
   const [guess, setGuess] = useState("");
   const [attempts, setAttempts] = useState<string[]>([]);
   const [solved, setSolved] = useState(false);
@@ -21,6 +24,9 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
 
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
+
+  const displayTitle = locale === "en" && payload.answerEn ? payload.answerEn : payload.answerKr;
+  const subTitle = locale === "en" ? payload.answerKr : payload.answerEn;
 
   function submitGuess() {
     if (finished || !guess.trim()) return;
@@ -36,16 +42,20 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
 
     if (isCorrect) {
       setSolved(true);
-      setNotice("정답입니다!");
+      setNotice(t("correct"));
       const timeSec = Math.round((Date.now() - startTimeRef.current) / 1000);
       onSolve?.(nextAttempts.length, timeSec);
       return;
     }
 
     if (nextAttempts.length < 5) {
-      setNotice("틀렸습니다! 초성과 힌트를 확인해 보세요.");
+      setNotice(locale === "ko" ? "틀렸습니다! 초성과 힌트를 확인해 보세요." : "Incorrect! Check the initials and clues.");
     } else {
-      setNotice(`아쉽네요. 정답은 "${payload.answerKr}" 입니다.`);
+      setNotice(
+        locale === "ko"
+          ? `아쉽네요. 정답은 "${payload.answerKr}" 입니다.`
+          : `Game over. The answer was "${displayTitle}".`
+      );
       onFail?.();
     }
   }
@@ -62,21 +72,21 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
         <div className="chosung-card">
           <div className="audio-badge">
             <IconHangul size={14} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
-            초성 맞히기
+            {t("chosungTitle")}
           </div>
           <div className="chosung-display">{payload.chosung}</div>
           <div className="chosung-meta">
             <span>{payload.category}</span>
             <span>·</span>
-            <span>{payload.syllableCount}글자</span>
+            <span>{payload.syllableCount}{locale === "ko" ? "글자" : " chars"}</span>
           </div>
         </div>
       </div>
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <span className="eyebrow">초성 맞히기</span>
-          <h2>초성을 보고 원래 제목을 맞혀보세요</h2>
+          <span className="eyebrow">{t("chosungTitle")}</span>
+          <h2>{t("whatChosung")}</h2>
         </div>
 
         <div className="search-wrap">
@@ -84,11 +94,11 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitGuess()}
-            placeholder="전체 제목을 한글로 입력하세요"
+            placeholder={t("chosungPlaceholder")}
             disabled={finished}
           />
           <button type="button" onClick={submitGuess} disabled={!guess.trim() || finished}>
-            제출
+            {t("submit")}
           </button>
         </div>
 
@@ -107,10 +117,16 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
                 onClick={() => useClue(clue.id)}
               >
                 <div className="clue-header">
-                  <span>{clue.label}</span>
+                  <span>{localizeClueLabel(clue.label, locale)}</span>
                   {used ? <IconUnlock size={14} /> : <IconLock size={14} />}
                 </div>
-                <strong>{used ? clue.value : unlocked ? "힌트 열기" : "잠김"}</strong>
+                <strong>
+                  {used
+                    ? clue.value
+                    : unlocked
+                    ? (locale === "ko" ? "힌트 열기" : "Reveal hint")
+                    : (locale === "ko" ? "잠김" : "Locked")}
+                </strong>
               </button>
             );
           })}
@@ -118,9 +134,9 @@ export function ChosungGameView({ payload, onSolve, onFail }: Props) {
 
         {finished && (
           <div className="result-card">
-            <span className="eyebrow">{solved ? "정답 성공" : "정답 공개"}</span>
-            <h3>{payload.answerKr}</h3>
-            <p>{payload.answerEn}</p>
+            <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
+            <h3>{displayTitle}</h3>
+            {subTitle && <p>{subTitle}</p>}
           </div>
         )}
 
