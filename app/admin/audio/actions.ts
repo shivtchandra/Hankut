@@ -27,6 +27,8 @@ export type SongPuzzleDraft = {
   publish: boolean;
   /** Where players can hear the full track (e.g. Spotify), shown on reveal. */
   sourceUrl?: string;
+  /** Spotify track ID — used to build the embed player for clips in the game. */
+  spotifyTrackId?: string;
   /**
    * Per-clip start points. When set, each clip is its own bit of the song
    * (segments[i] is that clip's length) instead of a longer replay from startSeconds.
@@ -118,6 +120,7 @@ export async function saveSongPuzzle(
     drama_title: dramaTitle,
     start_seconds: startSeconds,
     ...(draft.sourceUrl ? { source_url: draft.sourceUrl } : {}),
+    ...(draft.spotifyTrackId ? { spotify_track_id: draft.spotifyTrackId } : {}),
   };
 
   const status = draft.publish ? "published" : "draft";

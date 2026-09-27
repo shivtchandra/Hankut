@@ -255,6 +255,7 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
       artistKr: puzzle.metadata?.artist_kr ?? "",
       artistEn: puzzle.metadata?.artist_en ?? "",
       audioUrl: audioStep?.asset_url ?? "",
+      spotifyTrackId: puzzle.metadata?.spotify_track_id ?? undefined,
       segments: audioSegments.length > 0 ? audioSegments : [1, 2, 4, 7, 12],
       startSeconds: Number(puzzle.metadata?.start_seconds ?? 0),
       clipStarts:

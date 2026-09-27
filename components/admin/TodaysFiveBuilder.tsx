@@ -21,11 +21,13 @@ type Drama = { id: string; title_en: string; title_kr: string; aliases?: string[
 
 type SpotifyLookup = {
   spotifyUrl: string;
+  embedUrl: string;
+  trackId: string;
   title: string;
   artist: string;
   cover: string | null;
-  audioUrl?: string | null;
   isFullTrack?: boolean;
+  audioUrl?: string | null;
   previews: { trackName: string; artistName: string; previewUrl: string; storeUrl: string }[];
 };
 
@@ -242,20 +244,14 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
       setSongTitle(lookup.title);
       setArtistName(lookup.artist);
       setSongClips(DEFAULT_SONG_CLIPS);
-      if (lookup.audioUrl) {
-        setAudioUrl(lookup.audioUrl);
-        setNotice({
-          type: "ok",
-          msg: lookup.isFullTrack
-            ? "Imported full song from Spotify! Set each clip's start and length."
-            : "Imported from Spotify — 30s preview loaded. Pick a start point.",
-        });
-      } else {
-        setNotice({
-          type: "err",
-          msg: "Found the track, but no audio could be imported. Upload the file instead.",
-        });
+      // Use Apple preview as game audio; admin listens via the Spotify embed below
+      if (lookup.previews[0]) {
+        setAudioUrl(lookup.previews[0].previewUrl);
       }
+      setNotice({
+        type: "ok",
+        msg: "Imported! Listen on the Spotify player below to find your clip timestamps.",
+      });
     } catch (e) {
       setNotice({ type: "err", msg: e instanceof Error ? e.message : "Spotify lookup failed" });
     } finally {
@@ -362,6 +358,7 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
           gameDate: targetDate,
           publish,
           sourceUrl: spotifyLookup?.spotifyUrl,
+          spotifyTrackId: spotifyLookup?.trackId,
         });
         if (!result.ok) {
           setNotice({ type: "err", msg: result.errors.join(" ") });
@@ -969,59 +966,33 @@ export function TodaysFiveBuilder({ dramas, today }: { dramas: Drama[]; today?: 
                   cursor: lookingUpSpotify ? "default" : "pointer",
                 }}
               >
-                {lookingUpSpotify ? "Importing full song…" : "Import"}
+                {lookingUpSpotify ? "Importing…" : "Import"}
               </button>
             </div>
             <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted)" }}>
-              Fills title &amp; artist and imports the full song. Players get a &quot;listen on
-              Spotify&quot; link after the reveal.
+              Fills title &amp; artist. Listen on the Spotify player that appears — note your clip
+              timestamps, then enter them in the clip editor below.
             </p>
 
             {spotifyLookup && (
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "center",
-                  marginTop: 10,
-                  padding: 10,
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              >
-                {spotifyLookup.cover && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={spotifyLookup.cover} alt="" width={48} height={48} style={{ borderRadius: 4 }} />
-                )}
-                <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
-                  <div>
-                    <strong>{spotifyLookup.title}</strong>
-                    <span style={{ color: "var(--muted)", marginLeft: 6 }}>{spotifyLookup.artist}</span>
-                  </div>
-                  {spotifyLookup.isFullTrack && (
-                    <div style={{ marginTop: 2, fontSize: 12, color: "var(--green)", fontWeight: 600 }}>
-                      ✓ Full song imported &amp; ready
-                    </div>
-                  )}
-                  {spotifyLookup.previews.length > 0 && (
-                    <select
-                      value={audioUrl}
-                      onChange={(e) => setAudioUrl(e.target.value)}
-                      style={{ display: "block", marginTop: 6, fontSize: 12, maxWidth: "100%" }}
-                    >
-                      {spotifyLookup.audioUrl && (
-                        <option value={spotifyLookup.audioUrl}>
-                          {spotifyLookup.isFullTrack ? "Full Song (Imported)" : "Preview"}
-                        </option>
-                      )}
-                      {spotifyLookup.previews.map((p) => (
-                        <option key={p.previewUrl} value={p.previewUrl}>
-                          30s Preview: {p.trackName} — {p.artistName}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
+              <div style={{ marginTop: 12 }}>
+                {/* Full Spotify embed — lets admin seek anywhere to find clip start times */}
+                <iframe
+                  src={spotifyLookup.embedUrl}
+                  width="100%"
+                  height="152"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  style={{
+                    borderRadius: 12,
+                    border: "none",
+                    display: "block",
+                  }}
+                />
+                <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--muted)" }}>
+                  Play the song above → pause where each clip should start → enter that time in
+                  &quot;Start (s)&quot; below.
+                </p>
               </div>
             )}
           </div>

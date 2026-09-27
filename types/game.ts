@@ -108,6 +108,8 @@ export type SongPayload = {
   artistKr: string;
   artistEn: string;
   audioUrl: string;
+  /** Spotify track ID — when present, clips are played via Spotify embed */
+  spotifyTrackId?: string;
   segments: number[]; // e.g. [1, 2, 4, 7, 12]
   startSeconds?: number; // where each reveal begins in the clip
   clipStarts?: number[]; // per-clip start points; overrides startSeconds when set

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { normalize } from "@/lib/game/normalization";
 
-// Spotify exposes no audio we're allowed to use, so a Spotify link only gives us
-// metadata (title, artist, cover). The playable audio is Apple's official 30s
-// preview for the same track: its URL is stable and meant for sampling.
+// We use Spotify only for metadata (title, artist, cover) + track ID for the embed player.
+// The Spotify embed (open.spotify.com/embed/track/ID?t=START) plays clips directly in the
+// browser — no audio file downloads needed.
 
 type PreviewCandidate = {
   trackName: string;
@@ -16,7 +16,7 @@ type PreviewCandidate = {
 
 const TIMEOUT = 8000;
 
-function spotifyTrackId(input: string): string | null {
+function extractSpotifyTrackId(input: string): string | null {
   const uri = input.match(/^spotify:track:([A-Za-z0-9]{22})$/);
   if (uri) return uri[1];
   try {
@@ -53,17 +53,12 @@ async function spotifyMetadata(trackUrl: string) {
   const html = await res.text();
 
   const title = metaContent(html, "og:title");
-  // og:description looks like "Artist · Album · Song · 2016"
   const description = metaContent(html, "og:description") ?? "";
   const artist =
     metaContent(html, "music:musician_description") ?? description.split(" · ")[0] ?? "";
   if (!title) throw new Error("Couldn't read track info from Spotify");
 
-  return {
-    title,
-    artist,
-    cover: metaContent(html, "og:image"),
-  };
+  return { title, artist, cover: metaContent(html, "og:image") };
 }
 
 async function itunesPreviews(title: string, artist: string): Promise<PreviewCandidate[]> {
@@ -71,7 +66,7 @@ async function itunesPreviews(title: string, artist: string): Promise<PreviewCan
     term: `${title} ${artist}`.trim(),
     entity: "song",
     limit: "10",
-    country: "US", // Apple has no KR music store; the US store carries K-OSTs with Korean titles.
+    country: "US",
   });
   const res = await fetch(`https://itunes.apple.com/search?${params}`, {
     signal: AbortSignal.timeout(TIMEOUT),
@@ -111,10 +106,6 @@ async function itunesPreviews(title: string, artist: string): Promise<PreviewCan
     .slice(0, 5);
 }
 
-import { downloadFullTrackAudio } from "@/lib/audio/download-track";
-
-export const maxDuration = 60;
-
 export async function GET(req: Request) {
   const auth = await requireAdminApi();
   if (!auth.ok) {
@@ -122,30 +113,25 @@ export async function GET(req: Request) {
   }
 
   const input = new URL(req.url).searchParams.get("url")?.trim() ?? "";
-  const id = spotifyTrackId(input);
-  if (!id) {
+  const trackId = extractSpotifyTrackId(input);
+  if (!trackId) {
     return NextResponse.json(
       { error: "Paste a Spotify track link (open.spotify.com/track/…)" },
       { status: 400 },
     );
   }
-  const spotifyUrl = `https://open.spotify.com/track/${id}`;
+  const spotifyUrl = `https://open.spotify.com/track/${trackId}`;
+  const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`;
 
   try {
     const meta = await spotifyMetadata(spotifyUrl);
-    const [fullAudio, previews] = await Promise.all([
-      downloadFullTrackAudio(meta.title, meta.artist),
-      itunesPreviews(meta.title, meta.artist),
-    ]);
-
-    const audioUrl = fullAudio.ok ? fullAudio.audioUrl : (previews[0]?.previewUrl ?? null);
-    const isFullTrack = fullAudio.ok;
+    const previews = await itunesPreviews(meta.title, meta.artist);
 
     return NextResponse.json({
       spotifyUrl,
+      embedUrl,
+      trackId,
       ...meta,
-      audioUrl,
-      isFullTrack,
       previews,
     });
   } catch (e) {
@@ -155,4 +141,3 @@ export async function GET(req: Request) {
     );
   }
 }
-

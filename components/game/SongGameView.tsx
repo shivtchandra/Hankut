@@ -20,29 +20,52 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
   const [solved, setSolved] = useState(false);
   const [usedClues, setUsedClues] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+
+  // For Spotify embed clips: each play remounts the iframe (key trick) to restart from t=
+  const [embedKey, setEmbedKey] = useState(0);
+  const [activeEmbed, setActiveEmbed] = useState<{ src: string; duration: number } | null>(null);
+
+  // For plain audio fallback (no Spotify track ID)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startTimeRef = useRef<number>(Date.now());
+  const stopTimerRef = useRef<number | null>(null);
 
   const currentDuration = segments[level] || 1;
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
 
-  const stopTimerRef = useRef<number | null>(null);
-
   function playSegment(clip = level) {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(payload.audioUrl);
-    }
-    const audio = audioRef.current;
     if (stopTimerRef.current) window.clearTimeout(stopTimerRef.current);
-    audio.currentTime = payload.clipStarts?.[clip] ?? payload.startSeconds ?? 0;
-    audio.play().catch(() => {});
-    setIsPlaying(true);
+    const duration = segments[clip] ?? 1;
+    const startSec = payload.clipStarts?.[clip] ?? payload.startSeconds ?? 0;
 
-    stopTimerRef.current = window.setTimeout(() => {
-      audio.pause();
-      setIsPlaying(false);
-    }, (segments[clip] || 1) * 1000);
+    if (payload.spotifyTrackId) {
+      // Play via Spotify embed: ?t=START_SECONDS starts the preview/playback there
+      const embedSrc = `https://open.spotify.com/embed/track/${payload.spotifyTrackId}?utm_source=generator&t=${Math.floor(startSec)}`;
+      setEmbedKey((k) => k + 1);
+      setActiveEmbed({ src: embedSrc, duration });
+      setIsPlaying(true);
+
+      // Stop (unmount embed) after the clip duration
+      stopTimerRef.current = window.setTimeout(() => {
+        setActiveEmbed(null);
+        setIsPlaying(false);
+      }, duration * 1000);
+    } else {
+      // Fallback: plain audio element
+      if (!audioRef.current) {
+        audioRef.current = new Audio(payload.audioUrl);
+      }
+      const audio = audioRef.current;
+      audio.currentTime = startSec;
+      audio.play().catch(() => {});
+      setIsPlaying(true);
+
+      stopTimerRef.current = window.setTimeout(() => {
+        audio.pause();
+        setIsPlaying(false);
+      }, duration * 1000);
+    }
   }
 
   function submitGuess() {
@@ -85,6 +108,19 @@ export function SongGameView({ payload, onSolve, onFail }: Props) {
             <IconMusic size={14} style={{ marginRight: 6, display: "inline-block", verticalAlign: "middle" }} />
             오늘의 노래
           </div>
+
+          {/* Spotify embed (hidden iframe — audio only) */}
+          {activeEmbed && (
+            <iframe
+              key={embedKey}
+              src={activeEmbed.src}
+              width="0"
+              height="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+              title="spotify-clip"
+            />
+          )}
 
           <div className="waveform-display">
             {[...Array(16)].map((_, i) => (
