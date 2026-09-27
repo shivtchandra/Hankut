@@ -75,50 +75,12 @@ export default async function Home({ searchParams }: Props) {
     .format(new Date(`${targetDate}T12:00:00+09:00`))
     .toUpperCase();
 
-  if (todaysFive && todaysFive.items.length > 0) {
-    return (
-      <main className="game-page">
-        <ViewerClockSync />
-        <SiteNav />
-        <section className="play-stage">
-          <div className="game-stage-container">
-            <TodaysFiveView todaysFive={todaysFive} dramas={dramas} />
-          </div>
-        </section>
-        <SiteFooter />
-      </main>
-    );
-  }
-
-  if (source === "demo") {
-    return (
-      <main className="game-page">
-        <ViewerClockSync />
-        <SiteNav />
-        <div style={{ minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "60px 24px", textAlign: "center" }}>
-          <p style={{ fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", fontFamily: "var(--font-mono, monospace)" }}>
-            {dateLabel}
-          </p>
-          <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 700, margin: 0 }}>
-            Today&apos;s cut is being prepared
-          </h1>
-          <p style={{ fontSize: 15, color: "var(--muted)", maxWidth: 340, margin: 0 }}>
-            Come back later — the daily puzzle drops soon.
-          </p>
-          <Link href={`/?date=${shiftGameDate(today, -1)}`} style={{ marginTop: 8, fontSize: 14, color: "#DC2626", fontWeight: 600, textDecoration: "none" }}>
-            ← Play yesterday&apos;s puzzle
-          </Link>
-        </div>
-        <SiteFooter />
-      </main>
-    );
-  }
-
   return (
     <>
       <ViewerClockSync />
       <GamePage
         game={game}
+        todaysFive={todaysFive && todaysFive.items.length > 0 ? todaysFive : undefined}
         dramas={dramas}
         source={source}
         dateLabel={dateLabel}

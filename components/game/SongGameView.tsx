@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { localizeClueLabel } from "@/lib/i18n/dictionary";
+import { normalize } from "@/lib/game/normalization";
 import {
   IconCheck,
   IconLock,
@@ -10,7 +12,10 @@ import {
   IconUnlock,
   IconSkipForward,
   IconShare,
+  IconFlame,
+  IconSearch,
 } from "@/components/icons/Icons";
+import { getStreak } from "@/lib/game/streak";
 import {
   buildInviteShare,
   buildScoreShare,
@@ -18,72 +23,91 @@ import {
   shareOrCopy,
 } from "@/lib/game/share";
 import { seoulToday } from "@/lib/game/dates";
-import type { SongPayload } from "@/types/game";
-
-type SearchResult = { id: string; titleKr: string; titleEn: string; type: string };
+import type { Drama, SongPayload } from "@/types/game";
 
 type Props = {
   payload: SongPayload;
+  dramas?: Drama[];
   gameDate?: string;
   onSolve?: (attemptsCount: number, timeSec: number) => void;
   onFail?: () => void;
 };
 
-export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
+export function SongGameView({ payload, dramas = [], gameDate, onSolve, onFail }: Props) {
   const { locale, t } = useLocale();
   const segments = payload.segments || [1, 2, 4, 7, 12];
   const [level, setLevel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [guess, setGuess] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [suggestIndex, setSuggestIndex] = useState(-1);
-  const [isSearching, setIsSearching] = useState(false);
   const [attempts, setAttempts] = useState<string[]>([]);
   const [solved, setSolved] = useState(false);
   const [notice, setNotice] = useState("");
   const [shareNotice, setShareNotice] = useState("");
+  const [shake, setShake] = useState(false);
+  const [streak, setStreak] = useState(0);
 
   const [embedKey, setEmbedKey] = useState(0);
   const [activeEmbed, setActiveEmbed] = useState<{ src: string; duration: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const stopTimerRef = useRef<number | null>(null);
-  const searchAbortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setStreak(getStreak());
+  }, []);
 
   const currentDuration = segments[level] || 1;
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
   const activeDate = gameDate || seoulToday();
 
-  // Display info for result card (only shown after game ends)
+  // Display info for result card
   const songDisplayTitle = locale === "en" && payload.titleEn ? payload.titleEn : payload.titleKr;
   const songDisplayArtist = locale === "en" && payload.artistEn ? payload.artistEn : payload.artistKr;
 
-  // --- Drama search via API ---
-  const fetchSuggestions = useCallback(async (q: string) => {
-    if (!q.trim()) { setSuggestions([]); return; }
-    if (searchAbortRef.current) searchAbortRef.current.abort();
-    const ctrl = new AbortController();
-    searchAbortRef.current = ctrl;
-    setIsSearching(true);
-    try {
-      const res = await fetch(`/api/game/search?q=${encodeURIComponent(q.trim())}&type=drama`, { signal: ctrl.signal });
-      if (!res.ok) return;
-      const data: SearchResult[] = await res.json();
-      setSuggestions(data.slice(0, 8));
-    } catch {
-      // aborted or network error
-    } finally {
-      setIsSearching(false);
+  function primaryTitle(d: Drama) {
+    return locale === "en" ? d.titleEn : d.titleKr;
+  }
+  function secondaryTitle(d: Drama) {
+    return locale === "en" ? d.titleKr : d.titleEn;
+  }
+
+  // Pre-index normalized drama list for zero-lag instant autocomplete
+  const indexedDramas = useMemo(() => {
+    return (dramas || []).map((drama) => ({
+      drama,
+      normAliases: (drama.aliases || []).map((a) => normalize(a)),
+      normTitleEn: normalize(drama.titleEn || ""),
+      normTitleKr: normalize(drama.titleKr || ""),
+    }));
+  }, [dramas]);
+
+  const suggestions = useMemo(() => {
+    const clean = guess.trim();
+    if (!clean) return [];
+    const q = normalize(clean);
+    const wordRe = new RegExp(`(^|[\\s_\\-·])${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+
+    const tier1: Drama[] = [];
+    const tier2: Drama[] = [];
+    const tier3: Drama[] = [];
+
+    for (const item of indexedDramas) {
+      const { normTitleEn, normTitleKr, normAliases: aliases } = item;
+      if (normTitleEn.startsWith(q) || normTitleKr.startsWith(q) || aliases.some((a) => a.startsWith(q))) {
+        tier1.push(item.drama);
+      } else if (aliases.some((a) => wordRe.test(a))) {
+        tier2.push(item.drama);
+      } else if (aliases.some((a) => a.includes(q)) || normTitleKr.includes(q) || normTitleEn.includes(q)) {
+        tier3.push(item.drama);
+      }
     }
-  }, []);
+    return [...tier1, ...tier2, ...tier3].slice(0, 6);
+  }, [guess, indexedDramas]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => fetchSuggestions(guess), 200);
-    return () => clearTimeout(timer);
-  }, [guess, fetchSuggestions]);
-
-  // --- Audio playback ---
+  // Audio playback
   function playSegment(clip = level) {
     if (stopTimerRef.current) window.clearTimeout(stopTimerRef.current);
     const duration = segments[clip] ?? 1;
@@ -113,7 +137,6 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
     }
   }
 
-  // --- Guess logic: check against payload.dramaTitle + aliases ---
   function isCorrectDrama(value: string) {
     const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "").replace(/[^\w가-힣]/g, "");
     const v = norm(value);
@@ -133,7 +156,6 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
     const nextAttempts = [...attempts, clean];
     setAttempts(nextAttempts);
     setGuess("");
-    setSuggestions([]);
     setSuggestIndex(-1);
 
     if (correct) {
@@ -143,6 +165,9 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
       onSolve?.(nextAttempts.length, timeSec);
       return;
     }
+
+    setShake(true);
+    setTimeout(() => setShake(false), 420);
 
     if (nextAttempts.length < 5) {
       const nextDur = segments[Math.min(level + 1, segments.length - 1)];
@@ -155,8 +180,8 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
     } else {
       setNotice(
         locale === "ko"
-          ? `아쉽네요. 정답 드라마는 "${payload.dramaTitle}" 입니다.`
-          : `Game over. The drama was "${payload.dramaTitle}".`
+          ? `아쉽네요. 정답 드라마는 "${payload.dramaTitle || "드라마"}" 입니다.`
+          : `Game over. The drama was "${payload.dramaTitle || "the drama"}".`
       );
       onFail?.();
     }
@@ -168,7 +193,6 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
     const nextAttempts = [...attempts, skipLabel];
     setAttempts(nextAttempts);
     setGuess("");
-    setSuggestions([]);
     setSuggestIndex(-1);
 
     if (nextAttempts.length < 5) {
@@ -182,8 +206,8 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
     } else {
       setNotice(
         locale === "ko"
-          ? `아쉽네요. 정답 드라마는 "${payload.dramaTitle}" 입니다.`
-          : `Game over. The drama was "${payload.dramaTitle}".`
+          ? `아쉽네요. 정답 드라마는 "${payload.dramaTitle || "드라마"}" 입니다.`
+          : `Game over. The drama was "${payload.dramaTitle || "the drama"}".`
       );
       onFail?.();
     }
@@ -280,104 +304,169 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
         </div>
       </div>
 
-      {/* Guess panel */}
+      {/* Guess panel - Matches Image 1 console design & vibe */}
       <div className="guess-panel">
-        <div className="guess-heading">
-          <div className="guess-heading-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span className="eyebrow">{t("todaySong")}</span>
-            <button type="button" className="scene-share-btn" onClick={handleShareGame} title={t("shareGame")}>
-              <IconShare size={13} />
-              <span>{t("shareGame")}</span>
-            </button>
+        <div className="console-topbar">
+          <div className="console-header-row">
+            <span className="console-eyebrow">{t("yourGuess")}</span>
+
+            <div className="console-meta-actions">
+              {streak > 0 && (
+                <div className="console-streak-chip">
+                  <IconFlame size={12} style={{ color: "#DC2626" }} />
+                  <span>{streak} {t("streak")}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                className="scene-share-btn"
+                onClick={handleShareGame}
+                title={t("shareGame")}
+              >
+                <IconShare size={12} />
+                <span>{t("shareGame")}</span>
+              </button>
+            </div>
           </div>
-          <h2>{locale === "ko" ? "이 노래가 나오는 드라마는?" : "Which drama is this song from?"}</h2>
+
+          <h2 className="console-title">{t("whatDrama")}</h2>
         </div>
 
-        <div className="search-wrap" style={{ position: "relative" }}>
-          <input
-            value={guess}
-            onChange={(e) => {
-              setGuess(e.target.value);
-              setSuggestIndex(-1);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setSuggestIndex((i) => (i >= suggestions.length - 1 ? 0 : i + 1));
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setSuggestIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-              } else if (e.key === "Enter") {
-                if (suggestIndex >= 0 && suggestions[suggestIndex]) {
-                  const s = suggestions[suggestIndex];
-                  submitGuess(locale === "en" && s.titleEn ? s.titleEn : s.titleKr);
-                } else {
-                  submitGuess();
-                }
-              } else if (e.key === "Escape") {
-                setSuggestions([]);
-                setSuggestIndex(-1);
-              }
-            }}
-            placeholder={locale === "ko" ? "드라마 제목을 검색하세요..." : "Search drama title..."}
-            disabled={finished}
-            autoComplete="off"
-          />
-          <button type="button" onClick={() => submitGuess()} disabled={!guess.trim() || finished}>
-            {t("submit")}
-          </button>
+        {shareNotice && <div className="game-notice" style={{ background: "#FEF3C7", color: "#92400E", marginBottom: 12 }}>{shareNotice}</div>}
 
-          {suggestions.length > 0 && !finished && (
-            <div className="suggestions" role="listbox">
-              {suggestions.map((item, index) => (
+        {!finished ? (
+          <div className="unified-play-box">
+            {/* The Single Unified Search Input */}
+            <div className={`unified-input-wrap ${shake ? "search-shake" : ""}`}>
+              <IconSearch size={18} className="unified-search-icon" />
+              <input
+                ref={inputRef}
+                value={guess}
+                onChange={(event) => {
+                  setGuess(event.target.value);
+                  setSuggestIndex(-1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setSuggestIndex((i) => (i >= suggestions.length - 1 ? 0 : i + 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setSuggestIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+                  } else if (e.key === "Enter") {
+                    if (suggestIndex >= 0 && suggestions[suggestIndex]) {
+                      const sel = suggestions[suggestIndex];
+                      const title = primaryTitle(sel);
+                      setGuess(title);
+                      submitGuess(title);
+                    } else {
+                      submitGuess();
+                    }
+                  } else if (e.key === "Escape") {
+                    setSuggestIndex(-1);
+                  }
+                }}
+                placeholder={t("guessPlaceholder")}
+                autoComplete="off"
+              />
+              {guess && (
                 <button
-                  key={item.id}
                   type="button"
-                  role="option"
-                  aria-selected={index === suggestIndex}
-                  className={index === suggestIndex ? "active" : ""}
+                  className="unified-clear-btn"
                   onClick={() => {
-                    const val = locale === "en" && item.titleEn ? item.titleEn : item.titleKr;
-                    submitGuess(val);
+                    setGuess("");
+                    setSuggestIndex(-1);
+                    inputRef.current?.focus();
                   }}
+                  aria-label="Clear input"
                 >
-                  <strong>{locale === "en" && item.titleEn ? item.titleEn : item.titleKr}</strong>
-                  {item.titleKr && item.titleEn && (
-                    <span>{locale === "en" ? item.titleKr : item.titleEn}</span>
-                  )}
+                  ✕
                 </button>
-              ))}
+              )}
+              <button
+                type="button"
+                className="unified-submit-btn"
+                onClick={() => submitGuess()}
+                disabled={!guess.trim()}
+              >
+                {t("guess")}
+              </button>
             </div>
-          )}
 
-          {isSearching && guess.trim() && !finished && (
-            <div className="suggestions" role="status" style={{ padding: "8px 12px", color: "var(--muted)" }}>
-              {locale === "ko" ? "검색 중…" : "Searching…"}
+            {/* Autocomplete Dropdown */}
+            {suggestions.length > 0 && (
+              <div className="suggestions" role="listbox">
+                {suggestions.map((drama, index) => (
+                  <button
+                    key={drama.id}
+                    type="button"
+                    role="option"
+                    aria-selected={index === suggestIndex}
+                    className={index === suggestIndex ? "active" : ""}
+                    onClick={() => {
+                      const title = primaryTitle(drama);
+                      setGuess(title);
+                      submitGuess(title);
+                    }}
+                  >
+                    <strong>{primaryTitle(drama)}</strong>
+                    <span>{secondaryTitle(drama)} {drama.year ? `· ${drama.year}` : ""}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Action Row: Skip Button + Visual Attempt Dots */}
+            <div className="unified-action-row">
+              <button
+                type="button"
+                className="unified-skip-btn"
+                onClick={skipClip}
+                disabled={attempts.length >= 5}
+              >
+                <IconSkipForward size={14} />
+                <span>{locale === "ko" ? "넘기기 (+1 오디오)" : "Skip (+1 clip)"}</span>
+              </button>
+
+              <div
+                className="attempt-dots-track"
+                role="status"
+                aria-label={`Attempt ${attempts.length + 1} of 5`}
+              >
+                {Array.from({ length: 5 }, (_, i) => {
+                  const att = attempts[i];
+                  const isCurrent = i === attempts.length && !finished;
+                  const isCorrect = att && solved && i === attempts.length - 1;
+                  const isSkipped = att === "Skipped" || att === "건너뜀";
+                  return (
+                    <span
+                      key={i}
+                      className={`attempt-dot ${
+                        att
+                          ? isCorrect
+                            ? "correct"
+                            : isSkipped
+                              ? "skipped"
+                              : "wrong"
+                          : isCurrent
+                            ? "current"
+                            : "empty"
+                      }`}
+                      title={att ? `${i + 1}: ${att}` : `Clip ${i + 1}`}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          )}
-        </div>
-
-        {!finished && (
-          <div className="unified-action-row" style={{ marginTop: 10 }}>
-            <button
-              type="button"
-              className="unified-skip-btn"
-              onClick={skipClip}
-              disabled={attempts.length >= 5}
-            >
-              <IconSkipForward size={14} />
-              <span>{locale === "ko" ? "넘기기 (다음 오디오)" : "Skip (+1 clip)"}</span>
-            </button>
           </div>
-        )}
+        ) : null}
 
-        {notice && <div className="game-notice">{notice}</div>}
-        {shareNotice && <div className="game-notice" style={{ background: "#FEF3C7", color: "#92400E" }}>{shareNotice}</div>}
+        {notice && <div className="game-notice" style={{ marginTop: 12 }}>{notice}</div>}
 
         {finished && (
-          <div className="result-card">
+          <div className="result-card" style={{ marginTop: 16 }}>
             <span className="eyebrow">{solved ? t("answerEyebrow") : t("answerReveal")}</span>
-            <h3>{payload.dramaTitle || (locale === "ko" ? "드라마 정보 없음" : "Unknown Drama")}</h3>
+            <h3>{payload.dramaTitle || (locale === "ko" ? "드라마 정보" : "Drama")}</h3>
             <p style={{ marginTop: 4, color: "var(--muted)", fontSize: 14 }}>
               🎵 {songDisplayTitle} — {songDisplayArtist}
             </p>
@@ -390,6 +479,7 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 16 }}>
               <button
                 type="button"
+                className="result-share-btn"
                 style={{ background: "var(--ink)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "10px 14px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
                 onClick={handleShareResult}
               >
@@ -397,6 +487,7 @@ export function SongGameView({ payload, gameDate, onSolve, onFail }: Props) {
               </button>
               <button
                 type="button"
+                className="result-share-btn"
                 style={{ background: "var(--paper-soft)", color: "var(--ink)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 14px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
                 onClick={handleShareChallenge}
               >

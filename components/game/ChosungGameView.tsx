@@ -10,6 +10,7 @@ import {
   IconUnlock,
   IconSkipForward,
   IconShare,
+  IconSearch,
 } from "@/components/icons/Icons";
 import {
   buildInviteShare,
@@ -201,81 +202,138 @@ export function ChosungGameView({ payload, dramas = [], gameDate, onSolve, onFai
       </div>
 
       <div className="guess-panel">
-        <div className="guess-heading">
-          <div className="guess-heading-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span className="eyebrow">{t("chosungTitle")}</span>
-            <button
-              type="button"
-              className="scene-share-btn"
-              onClick={handleShareGame}
-              title={t("shareGame")}
-            >
-              <IconShare size={13} />
-              <span>{t("shareGame")}</span>
-            </button>
-          </div>
-          <h2>{t("whatChosung")}</h2>
-        </div>
+        <div className="console-topbar">
+          <div className="console-header-row">
+            <span className="console-eyebrow">{t("chosungTitle")}</span>
 
-        <div className="search-wrap">
-          <input
-            value={guess}
-            onChange={(e) => {
-              setGuess(e.target.value);
-              setSuggestIndex(-1);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setSuggestIndex((i) => (i >= suggestions.length - 1 ? 0 : i + 1));
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setSuggestIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-              } else if (e.key === "Enter") {
-                if (suggestIndex >= 0 && suggestions[suggestIndex]) {
-                  submitGuess(suggestions[suggestIndex].cleanVal);
-                } else {
-                  submitGuess();
-                }
-              }
-            }}
-            placeholder={t("chosungPlaceholder")}
-            disabled={finished}
-          />
-          <button type="button" onClick={() => submitGuess()} disabled={!guess.trim() || finished}>
-            {t("submit")}
-          </button>
-
-          {suggestions.length > 0 && !finished && (
-            <div className="suggestions" role="listbox">
-              {suggestions.map((item, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  role="option"
-                  aria-selected={index === suggestIndex}
-                  className={index === suggestIndex ? "active" : ""}
-                  onClick={() => submitGuess(item.cleanVal)}
-                >
-                  <strong>{item.primary}</strong>
-                  <span>{item.secondary}</span>
-                </button>
-              ))}
+            <div className="console-meta-actions">
+              <button
+                type="button"
+                className="scene-share-btn"
+                onClick={handleShareGame}
+                title={t("shareGame")}
+              >
+                <IconShare size={12} />
+                <span>{t("shareGame")}</span>
+              </button>
             </div>
-          )}
+          </div>
+
+          <h2 className="console-title">{t("whatChosung")}</h2>
         </div>
 
         {!finished && (
-          <div className="unified-action-row" style={{ marginTop: 10 }}>
-            <button
-              type="button"
-              className="unified-skip-btn"
-              onClick={skipQuiz}
-              disabled={attempts.length >= 5}
-            >
-              <IconSkipForward size={14} />
-              <span>{t("skipCut")}</span>
-            </button>
+          <div className="unified-play-box">
+            <div className="unified-input-wrap">
+              <IconSearch size={18} className="unified-search-icon" />
+              <input
+                value={guess}
+                onChange={(e) => {
+                  setGuess(e.target.value);
+                  setSuggestIndex(-1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setSuggestIndex((i) => (i >= suggestions.length - 1 ? 0 : i + 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setSuggestIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+                  } else if (e.key === "Enter") {
+                    if (suggestIndex >= 0 && suggestions[suggestIndex]) {
+                      submitGuess(suggestions[suggestIndex].cleanVal);
+                    } else {
+                      submitGuess();
+                    }
+                  } else if (e.key === "Escape") {
+                    setSuggestIndex(-1);
+                  }
+                }}
+                placeholder={t("chosungPlaceholder")}
+                autoComplete="off"
+              />
+              {guess && (
+                <button
+                  type="button"
+                  className="unified-clear-btn"
+                  onClick={() => {
+                    setGuess("");
+                    setSuggestIndex(-1);
+                  }}
+                  aria-label="Clear input"
+                >
+                  ✕
+                </button>
+              )}
+              <button
+                type="button"
+                className="unified-submit-btn"
+                onClick={() => submitGuess()}
+                disabled={!guess.trim()}
+              >
+                {t("guess")}
+              </button>
+            </div>
+
+            {suggestions.length > 0 && (
+              <div className="suggestions" role="listbox">
+                {suggestions.map((item, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    role="option"
+                    aria-selected={index === suggestIndex}
+                    className={index === suggestIndex ? "active" : ""}
+                    onClick={() => submitGuess(item.cleanVal)}
+                  >
+                    <strong>{item.primary}</strong>
+                    <span>{item.secondary}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="unified-action-row">
+              <button
+                type="button"
+                className="unified-skip-btn"
+                onClick={skipQuiz}
+                disabled={attempts.length >= 5}
+              >
+                <IconSkipForward size={14} />
+                <span>{t("skipCut")}</span>
+              </button>
+
+              <div
+                className="attempt-dots-track"
+                role="status"
+                aria-label={`Attempt ${attempts.length + 1} of 5`}
+              >
+                {Array.from({ length: 5 }, (_, i) => {
+                  const att = attempts[i];
+                  const isCurrent = i === attempts.length && !finished;
+                  const isCorrect = att && solved && i === attempts.length - 1;
+                  const isSkipped = att === "Skipped" || att === "건너뜀";
+                  return (
+                    <span
+                      key={i}
+                      className={`attempt-dot ${
+                        att
+                          ? isCorrect
+                            ? "correct"
+                            : isSkipped
+                              ? "skipped"
+                              : "wrong"
+                          : isCurrent
+                            ? "current"
+                            : "empty"
+                      }`}
+                      title={att ? `${i + 1}: ${att}` : `Attempt ${i + 1}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 

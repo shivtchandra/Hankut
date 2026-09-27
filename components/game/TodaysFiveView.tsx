@@ -126,6 +126,8 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
         {currentItem.type === "song" && (
           <SongGameView
             payload={currentItem.payload}
+            dramas={dramas}
+            gameDate={todaysFive.gameDate}
             onSolve={(attempts) => handleGameComplete("song", attempts)}
             onFail={() => handleGameFail("song")}
           />
