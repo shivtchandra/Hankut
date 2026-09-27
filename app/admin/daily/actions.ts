@@ -72,7 +72,16 @@ export async function listDailyGames(monthPrefix?: string) {
   try {
     let setQuery = db
       .from("daily_sets")
-      .select("id, game_date, status, title")
+      .select(`
+        id,
+        game_date,
+        status,
+        title,
+        items:daily_set_items (
+          position,
+          puzzle:puzzles ( id, type, title, metadata )
+        )
+      `)
       .order("game_date", { ascending: true });
 
     if (monthPrefix) {
@@ -84,6 +93,36 @@ export async function listDailyGames(monthPrefix?: string) {
     const { data: setRows } = await setQuery;
     if (setRows) {
       for (const st of setRows) {
+        let label = st.title;
+        let dramaTitleKr = st.title ?? "Daily Set";
+        let dramaTitleEn = "Daily Set";
+
+        const items = (st.items ?? []) as Array<{
+          position: number;
+          puzzle: { id: string; type: string; title: string; metadata?: Record<string, unknown> } | Array<{ id: string; type: string; title: string; metadata?: Record<string, unknown> }>;
+        }>;
+
+        if (items.length > 0) {
+          const songItem = items.find((it) => {
+            const p = Array.isArray(it.puzzle) ? it.puzzle[0] : it.puzzle;
+            return p?.type === "song";
+          });
+          const chosen = songItem || items[0];
+          const p = Array.isArray(chosen?.puzzle) ? chosen.puzzle[0] : chosen?.puzzle;
+          if (p) {
+            const meta = (p.metadata ?? {}) as Record<string, unknown>;
+            if (p.type === "song") {
+              const artist = String(meta.artist_kr || meta.artist_en || "");
+              label = `🎵 ${p.title}${artist ? ` (${artist})` : ""}`;
+              dramaTitleKr = label;
+              dramaTitleEn = String(meta.title_en || meta.drama_title || "Song Puzzle");
+            } else {
+              label = p.title;
+              dramaTitleKr = p.title;
+            }
+          }
+        }
+
         const existing = dateMap.get(st.game_date);
         const synthRow = {
           id: st.id,
@@ -92,8 +131,8 @@ export async function listDailyGames(monthPrefix?: string) {
           difficulty: 5,
           scene: {
             id: st.id,
-            scene_code: st.title ?? "Daily Set",
-            drama: { title_kr: st.title ?? "Daily Set", title_en: "Daily Set" },
+            scene_code: label ?? "Daily Set",
+            drama: { title_kr: dramaTitleKr, title_en: dramaTitleEn },
           },
         };
 

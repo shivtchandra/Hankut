@@ -43,23 +43,43 @@ export default async function AdminHome() {
     const end = new Date(`${today}T12:00:00+09:00`);
     end.setDate(end.getDate() + 7);
 
-    const { data: todayRow } = await db.from("daily_games").select("status").eq("game_date", today).maybeSingle();
-    todayStatus = todayRow?.status ?? "No puzzle";
+    const [
+      { data: todayGame },
+      { data: todaySet },
+      { data: tomorrowGame },
+      { data: tomorrowSet },
+      { data: next7Games },
+      { data: next7Sets },
+      { data: health },
+      { data: sceneRows },
+    ] = await Promise.all([
+      db.from("daily_games").select("status").eq("game_date", today).maybeSingle(),
+      db.from("daily_sets").select("status").eq("game_date", today).maybeSingle(),
+      db.from("daily_games").select("status").eq("game_date", tomorrow).maybeSingle(),
+      db.from("daily_sets").select("status").eq("game_date", tomorrow).maybeSingle(),
+      db.from("daily_games").select("game_date, status").gte("game_date", today).lt("game_date", seoulDate(end)),
+      db.from("daily_sets").select("game_date, status").gte("game_date", today).lt("game_date", seoulDate(end)),
+      db.from("content_health").select("issue"),
+      db.from("scenes").select("id, scene_assets(id)"),
+    ]);
 
-    const { data: tomorrowRow } = await db.from("daily_games").select("status").eq("game_date", tomorrow).maybeSingle();
-    tomorrowStatus = tomorrowRow?.status ?? "No puzzle";
+    const resolveStatus = (gameStatus?: string | null, setStatus?: string | null) => {
+      if (gameStatus === "published" || setStatus === "published") return "published";
+      if (gameStatus === "scheduled" || setStatus === "scheduled") return "scheduled";
+      if (gameStatus === "draft" || setStatus === "draft") return "draft";
+      return gameStatus || setStatus || "No puzzle";
+    };
 
-    const { count: c7 } = await db
-      .from("daily_games")
-      .select("*", { count: "exact", head: true })
-      .gte("game_date", today)
-      .lt("game_date", seoulDate(end));
-    next7 = c7 ?? 0;
+    todayStatus = resolveStatus(todayGame?.status, todaySet?.status);
+    tomorrowStatus = resolveStatus(tomorrowGame?.status, tomorrowSet?.status);
 
-    const { data: health } = await db.from("content_health").select("issue");
+    const coveredDates = new Set([
+      ...(next7Games ?? []).filter((g) => g.status === "published" || g.status === "scheduled").map((g) => g.game_date),
+      ...(next7Sets ?? []).filter((s) => s.status === "published" || s.status === "scheduled").map((s) => s.game_date),
+    ]);
+    next7 = coveredDates.size;
+
     healthIssues = health?.filter((row) => row.issue !== "healthy").length ?? 0;
-
-    const { data: sceneRows } = await db.from("scenes").select("id, scene_assets(id)");
     readyScenes = (sceneRows ?? []).filter((s: any) => (s.scene_assets?.length ?? 0) >= 5).length;
   } catch {
     // demo fallback

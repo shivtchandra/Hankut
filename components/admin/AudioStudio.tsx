@@ -1,12 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { saveSongPuzzle, type SavedSongPuzzle } from "@/app/admin/audio/actions";
+import { useRouter } from "next/navigation";
+import {
+  saveSongPuzzle,
+  type SavedSongPuzzle,
+  type SongPuzzleListItem,
+} from "@/app/admin/audio/actions";
 
 const DEFAULT_SEGMENTS = [3, 6, 12, 20, 30];
 
 type Props = {
   initial: SavedSongPuzzle | null;
+  songList?: SongPuzzleListItem[];
   defaultGameDate: string;
 };
 
@@ -31,7 +37,8 @@ function formatSeconds(value: number): string {
   return `${minutes}:${seconds}`;
 }
 
-export function AudioStudio({ initial, defaultGameDate }: Props) {
+export function AudioStudio({ initial, songList = [], defaultGameDate }: Props) {
+  const router = useRouter();
   const [puzzleId, setPuzzleId] = useState(initial?.puzzleId ?? "");
   const [titleKr, setTitleKr] = useState(initial?.titleKr ?? "");
   const [titleEn, setTitleEn] = useState(initial?.titleEn ?? "");
@@ -53,6 +60,23 @@ export function AudioStudio({ initial, defaultGameDate }: Props) {
   const [errors, setErrors] = useState<string[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewTimer = useRef<number | null>(null);
+
+  function resetToNew() {
+    setPuzzleId("");
+    setTitleKr("");
+    setTitleEn("");
+    setArtistKr("");
+    setArtistEn("");
+    setDrama("");
+    setAliases("");
+    setGameDate(defaultGameDate);
+    setAudioUrl("");
+    setStartSeconds(0);
+    setSegments(DEFAULT_SEGMENTS);
+    setDuration(0);
+    setNotice("Started a new song puzzle draft.");
+    setErrors([]);
+  }
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -140,6 +164,7 @@ export function AudioStudio({ initial, defaultGameDate }: Props) {
           : "Published. Add a game date to schedule it."
         : "Draft saved.",
     );
+    router.refresh();
   }
 
   const maxStart = duration > 0 ? Math.max(duration - segments[0], 0) : 0;
@@ -156,6 +181,14 @@ export function AudioStudio({ initial, defaultGameDate }: Props) {
           </p>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
+          <button
+            className="secondary"
+            type="button"
+            onClick={resetToNew}
+            disabled={saving || uploading}
+          >
+            + New Song
+          </button>
           <button
             className="secondary"
             type="button"
@@ -211,9 +244,18 @@ export function AudioStudio({ initial, defaultGameDate }: Props) {
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 640 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 680, marginBottom: 40 }}>
         <div className="admin-card" style={cardStyle}>
-          <label style={labelStyle}>The answer</label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>
+              {puzzleId ? "Editing Song Puzzle" : "New Song Puzzle"}
+            </label>
+            {puzzleId && (
+              <span className="tag" style={{ fontSize: 11, fontFamily: "'DM Mono', monospace" }}>
+                ID: {puzzleId.slice(0, 8)}…
+              </span>
+            )}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <input
               value={titleKr}
@@ -416,6 +458,121 @@ export function AudioStudio({ initial, defaultGameDate }: Props) {
             any song already scheduled then.
           </p>
         </div>
+      </div>
+
+      {/* Song Puzzles Overview Table */}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <h2
+            style={{
+              fontSize: 13,
+              fontFamily: "'DM Mono', monospace",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--muted)",
+              margin: 0,
+            }}
+          >
+            All Song Puzzles ({songList.length})
+          </h2>
+        </div>
+
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Song Title</th>
+              <th>Artist</th>
+              <th>Drama</th>
+              <th>Game Date</th>
+              <th>Audio Preview</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {songList.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: "center", color: "var(--muted)", padding: 28 }}>
+                  No song puzzles created yet. Create one above.
+                </td>
+              </tr>
+            ) : (
+              songList.map((s) => {
+                const isSelected = s.puzzleId === puzzleId;
+                return (
+                  <tr
+                    key={s.puzzleId}
+                    style={{
+                      background: isSelected ? "var(--paper-soft)" : undefined,
+                    }}
+                  >
+                    <td>
+                      <strong style={{ display: "block" }}>{s.titleKr}</strong>
+                      {s.titleEn && (
+                        <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'DM Mono', monospace" }}>
+                          {s.titleEn}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ fontSize: 13 }}>
+                      {s.artistKr}
+                      {s.artistEn && <span style={{ color: "var(--muted)", marginLeft: 4 }}>({s.artistEn})</span>}
+                    </td>
+                    <td style={{ fontSize: 13 }}>{s.dramaTitle || "—"}</td>
+                    <td>
+                      {s.gameDate ? (
+                        <span
+                          className="tag"
+                          style={{
+                            fontFamily: "'DM Mono', monospace",
+                            fontSize: 12,
+                            background: s.gameDate === defaultGameDate ? "rgba(220, 38, 38, 0.1)" : undefined,
+                            color: s.gameDate === defaultGameDate ? "var(--accent)" : undefined,
+                            fontWeight: s.gameDate === defaultGameDate ? 700 : 500,
+                          }}
+                        >
+                          📅 {s.gameDate}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "var(--muted)" }}>Unscheduled</span>
+                      )}
+                    </td>
+                    <td>
+                      {s.audioUrl ? (
+                        <audio controls src={s.audioUrl} style={{ height: 28, width: 160 }} />
+                      ) : (
+                        <span style={{ fontSize: 12, color: "var(--muted)" }}>No audio</span>
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className="tag"
+                        style={{
+                          background: s.status === "published" ? "rgba(34, 197, 94, 0.12)" : undefined,
+                          color: s.status === "published" ? "#166534" : undefined,
+                        }}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="secondary"
+                        onClick={() => {
+                          router.push(`/admin/audio?id=${s.puzzleId}`);
+                        }}
+                        style={{ fontSize: 12, padding: "4px 10px" }}
+                      >
+                        {isSelected ? "Editing" : "Edit"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

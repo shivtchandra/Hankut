@@ -26,12 +26,14 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@remotion/cli": "^4.0.529",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.3",
+    "remotion": "^4.0.529",
     "tsx": "^4.23.13",
     "typescript": "^5.7.0"
   }

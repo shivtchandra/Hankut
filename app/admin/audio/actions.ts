@@ -244,17 +244,31 @@ export async function saveSongPuzzle(
   };
 }
 
-/** Loads a saved song puzzle for editing: the one on a date, else the newest. */
+export type SongPuzzleListItem = {
+  puzzleId: string;
+  titleKr: string;
+  titleEn: string;
+  artistKr: string;
+  artistEn: string;
+  dramaTitle: string;
+  audioUrl: string;
+  gameDate: string | null;
+  status: string;
+  updatedAt: string;
+};
+
+/** Loads a saved song puzzle for editing: by id, or on a date, else the newest. */
 export async function loadSongPuzzle(
   gameDate?: string,
+  targetPuzzleId?: string,
 ): Promise<SavedSongPuzzle | null> {
   await requireAdmin();
   const db = await createSupabaseAdmin();
 
-  let puzzleId: string | null = null;
+  let puzzleId: string | null = targetPuzzleId || null;
   let scheduledDate: string | null = null;
 
-  if (gameDate && isValidGameDate(gameDate)) {
+  if (!puzzleId && gameDate && isValidGameDate(gameDate)) {
     const { data: setRow } = await db
       .from("daily_sets")
       .select("id, game_date, items:daily_set_items(puzzle:puzzles(id, type))")
@@ -334,4 +348,56 @@ export async function loadSongPuzzle(
     gameDate: scheduledDate,
     status: puzzle.status ?? "draft",
   };
+}
+
+/** Lists all song puzzles in the database with their schedule dates and metadata. */
+export async function listSongPuzzles(): Promise<SongPuzzleListItem[]> {
+  await requireAdmin();
+  const db = await createSupabaseAdmin();
+
+  const { data: puzzles, error } = await db
+    .from("puzzles")
+    .select(`
+      id,
+      title,
+      status,
+      metadata,
+      updated_at,
+      steps:puzzle_steps(step_number, asset_url),
+      daily_items:daily_set_items(daily_set:daily_sets(game_date))
+    `)
+    .eq("type", "song")
+    .order("updated_at", { ascending: false });
+
+  if (error || !puzzles) return [];
+
+  return puzzles.map((p) => {
+    const meta = (p.metadata ?? {}) as Record<string, string | number>;
+    const steps = [...((p.steps ?? []) as Array<{ step_number: number; asset_url: string | null }>)].sort(
+      (a, b) => a.step_number - b.step_number,
+    );
+
+    const dailyItems = (p.daily_items ?? []) as Array<{ daily_set: unknown }>;
+    let gameDate: string | null = null;
+    for (const item of dailyItems) {
+      const set = Array.isArray(item.daily_set) ? item.daily_set[0] : item.daily_set;
+      if (set && (set as { game_date?: string }).game_date) {
+        gameDate = (set as { game_date: string }).game_date;
+        break;
+      }
+    }
+
+    return {
+      puzzleId: p.id,
+      titleKr: p.title ?? "",
+      titleEn: String(meta.title_en ?? ""),
+      artistKr: String(meta.artist_kr ?? ""),
+      artistEn: String(meta.artist_en ?? ""),
+      dramaTitle: String(meta.drama_title ?? ""),
+      audioUrl: steps[0]?.asset_url ?? "",
+      gameDate,
+      status: p.status ?? "draft",
+      updatedAt: p.updated_at,
+    };
+  });
 }
