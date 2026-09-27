@@ -4,19 +4,35 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { localizeClueLabel } from "@/lib/i18n/dictionary";
 import { matchesAlias, normalize } from "@/lib/game/normalization";
-import { IconChevronLeft, IconChevronRight, IconLock, IconUnlock, IconFlame } from "@/components/icons/Icons";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconLock,
+  IconUnlock,
+  IconFlame,
+  IconSkipForward,
+  IconShare,
+} from "@/components/icons/Icons";
 import { getAttemptPoints } from "@/lib/game/scoring";
 import { recordPlay, getStreak } from "@/lib/game/streak";
+import {
+  buildInviteShare,
+  buildScoreShare,
+  buildChallengeShare,
+  shareOrCopy,
+} from "@/lib/game/share";
+import { seoulToday } from "@/lib/game/dates";
 import type { Drama, ScenePayload } from "@/types/game";
 
 type Props = {
   payload: ScenePayload;
   dramas: Drama[];
+  gameDate?: string;
   onSolve?: (attemptsCount: number, timeSec: number) => void;
   onFail?: () => void;
 };
 
-export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
+export function SceneGameView({ payload, dramas = [], gameDate, onSolve, onFail }: Props) {
   const { locale, t } = useLocale();
   const frames = payload.frames;
   const clues = payload.clues;
@@ -28,6 +44,7 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
   const [solved, setSolved] = useState(false);
   const [usedClues, setUsedClues] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+  const [shareNotice, setShareNotice] = useState("");
   const [shake, setShake] = useState(false);
   const [suggestIndex, setSuggestIndex] = useState(-1);
   const [streak, setStreak] = useState(0);
@@ -40,14 +57,39 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
   const exhausted = !solved && attempts.length >= 5;
   const finished = solved || exhausted;
   const currentSrc = frames[frame] || frames[0];
+  const activeDate = gameDate || seoulToday();
+
+  const indexedDramas = useMemo(() => {
+    return (dramas || []).map((drama) => ({
+      drama,
+      normAliases: (drama.aliases || []).map((a) => normalize(a)),
+      normTitleEn: normalize(drama.titleEn || ""),
+      normTitleKr: normalize(drama.titleKr || ""),
+    }));
+  }, [dramas]);
 
   const suggestions = useMemo(() => {
-    if (!guess.trim()) return [];
-    const q = normalize(guess);
-    return dramas
-      .filter((d) => d.aliases.some((alias) => normalize(alias).includes(q)))
-      .slice(0, 5);
-  }, [guess, dramas]);
+    const clean = guess.trim();
+    if (!clean) return [];
+    const q = normalize(clean);
+    const wordRe = new RegExp(`(^|[\\s_\\-·])${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+
+    const tier1: Drama[] = [];
+    const tier2: Drama[] = [];
+    const tier3: Drama[] = [];
+
+    for (const item of indexedDramas) {
+      const { normTitleEn, normTitleKr, normAliases: aliases } = item;
+      if (normTitleEn.startsWith(q) || normTitleKr.startsWith(q) || aliases.some((a) => a.startsWith(q))) {
+        tier1.push(item.drama);
+      } else if (aliases.some((a) => wordRe.test(a))) {
+        tier2.push(item.drama);
+      } else if (aliases.some((a) => a.includes(q)) || normTitleKr.includes(q) || normTitleEn.includes(q)) {
+        tier3.push(item.drama);
+      }
+    }
+    return [...tier1, ...tier2, ...tier3].slice(0, 6);
+  }, [guess, indexedDramas]);
 
   function primaryTitle(d: Drama) {
     return locale === "en" ? d.titleEn : d.titleKr;
@@ -93,9 +135,69 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
     }
   }
 
+  function skipCut() {
+    if (finished) return;
+    const skipLabel = locale === "ko" ? "건너뜀" : "Skipped";
+    const nextAttempts = [...attempts, skipLabel];
+    setAttempts(nextAttempts);
+    setGuess("");
+    setSuggestIndex(-1);
+
+    if (nextAttempts.length < 5) {
+      setFrame((f) => Math.min(f + 1, frames.length - 1));
+      setNotice(t("wrongNext"));
+    } else {
+      setFrame(frames.length - 1);
+      setNotice(t("seeAnswer"));
+      onFail?.();
+    }
+  }
+
   function revealClue(clueId: string, unlockAfter: number) {
     if (attempts.length < unlockAfter || usedClues.includes(clueId)) return;
     setUsedClues((prev) => [...prev, clueId]);
+  }
+
+  async function handleShareGame() {
+    const shareData = buildInviteShare({
+      locale,
+      brand: t("brandName"),
+      gameDate: activeDate,
+      todayDate: seoulToday(),
+    });
+    const outcome = await shareOrCopy(shareData);
+    setShareNotice(outcome === "copied" ? t("shareGameCopied") : outcome === "shared" ? "" : t("shareFailed"));
+    if (outcome === "copied") setTimeout(() => setShareNotice(""), 2500);
+  }
+
+  async function handleShareResult() {
+    const score = solved ? getAttemptPoints(attempts.length) : 0;
+    const shareData = buildScoreShare({
+      locale,
+      brand: t("brandName"),
+      gameDate: activeDate,
+      todayDate: seoulToday(),
+      solved,
+      attempts: attempts.length,
+      score,
+    });
+    const outcome = await shareOrCopy(shareData);
+    setShareNotice(outcome === "copied" ? t("shareCopied") : outcome === "shared" ? "" : t("shareFailed"));
+    if (outcome === "copied") setTimeout(() => setShareNotice(""), 2500);
+  }
+
+  async function handleShareChallenge() {
+    const shareData = buildChallengeShare({
+      locale,
+      brand: t("brandName"),
+      gameDate: activeDate,
+      todayDate: seoulToday(),
+      solved,
+      attempts: attempts.length,
+    });
+    const outcome = await shareOrCopy(shareData);
+    setShareNotice(outcome === "copied" ? t("challengeCopied") : outcome === "shared" ? "" : t("shareFailed"));
+    if (outcome === "copied") setTimeout(() => setShareNotice(""), 2500);
   }
 
   return (
@@ -160,8 +262,17 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
 
       <div className="guess-panel">
         <div className="guess-heading">
-          <div className="guess-heading-top">
+          <div className="guess-heading-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="eyebrow">{t("yourGuess")}</span>
+            <button
+              type="button"
+              className="scene-share-btn"
+              onClick={handleShareGame}
+              title={t("shareGame")}
+            >
+              <IconShare size={13} />
+              <span>{t("shareGame")}</span>
+            </button>
           </div>
           <h2>{t("whatDrama")}</h2>
         </div>
@@ -174,7 +285,13 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
               setSuggestIndex(-1);
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setSuggestIndex((i) => (i >= suggestions.length - 1 ? 0 : i + 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setSuggestIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+              } else if (e.key === "Enter") {
                 if (suggestIndex >= 0 && suggestions[suggestIndex]) {
                   submitGuess(primaryTitle(suggestions[suggestIndex]));
                 } else {
@@ -195,21 +312,39 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
 
           {suggestions.length > 0 && !finished && (
             <div className="suggestions" role="listbox">
-              {suggestions.map((d) => (
+              {suggestions.map((d, index) => (
                 <button
                   key={d.id}
                   type="button"
+                  role="option"
+                  aria-selected={index === suggestIndex}
+                  className={index === suggestIndex ? "active" : ""}
                   onClick={() => submitGuess(primaryTitle(d))}
                 >
                   <strong>{primaryTitle(d)}</strong>
-                  <span>{secondaryTitle(d)}</span>
+                  <span>{secondaryTitle(d)} {d.year ? `· ${d.year}` : ""}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
+        {!finished && (
+          <div className="unified-action-row" style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              className="unified-skip-btn"
+              onClick={skipCut}
+              disabled={attempts.length >= 5}
+            >
+              <IconSkipForward size={14} />
+              <span>{t("skipCut")}</span>
+            </button>
+          </div>
+        )}
+
         {notice && <div className="game-notice">{notice}</div>}
+        {shareNotice && <div className="game-notice" style={{ background: "#FEF3C7", color: "#92400E" }}>{shareNotice}</div>}
 
         <div className="clue-row">
           {clues.map((clue) => {
@@ -258,6 +393,25 @@ export function SceneGameView({ payload, dramas, onSolve, onFail }: Props) {
                   <strong style={{ fontSize: 18 }}>{streak} Days</strong>
                 </div>
               </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 16 }}>
+              <button
+                type="button"
+                className="result-share-btn"
+                style={{ background: "var(--ink)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "10px 14px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
+                onClick={handleShareResult}
+              >
+                <IconShare size={15} /> {t("shareResult")}
+              </button>
+              <button
+                type="button"
+                className="result-share-btn"
+                style={{ background: "var(--paper-soft)", color: "var(--ink)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 14px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
+                onClick={handleShareChallenge}
+              >
+                ⚔️ {t("challengeFriend")}
+              </button>
             </div>
           </div>
         )}
