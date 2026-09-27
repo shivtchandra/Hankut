@@ -1115,7 +1115,40 @@ a {
   border-radius: 6px;
 }
 
-/* ---------- LEGACY ATTEMPT SLOTS & FALLBACK STYLES ---------- */
+/* ---------- ATTEMPTS & SLOTS ---------- */
+.attempts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.attempt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.attempt span {
+  font-family: "DM Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.attempt strong {
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+}
+
 .attempt-slots-list {
   display: flex;
   flex-direction: column;

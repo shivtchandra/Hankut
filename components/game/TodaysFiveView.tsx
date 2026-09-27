@@ -133,6 +133,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
         {currentItem.type === "chosung" && (
           <ChosungGameView
             payload={currentItem.payload}
+            dramas={dramas}
             onSolve={(attempts) => handleGameComplete("chosung", attempts)}
             onFail={() => handleGameFail("chosung")}
           />
@@ -147,6 +148,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
         {currentItem.type === "people" && (
           <PeopleGameView
             payload={currentItem.payload}
+            dramas={dramas}
             onSolve={(attempts) => handleGameComplete("people", attempts)}
             onFail={() => handleGameFail("people")}
           />
