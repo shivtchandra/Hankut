@@ -2658,14 +2658,14 @@ a {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin: 24px 0 32px;
+  margin: 12px 0 24px;
 }
 
 .filter-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 7px 14px;
   border-radius: 999px;
   background: #FFFFFF;
   border: 1.5px solid var(--line);
@@ -2685,6 +2685,214 @@ a {
   background: var(--ink);
   color: #FFFFFF;
   border-color: var(--ink);
+}
+
+.filter-chip-icon {
+  font-size: 13px;
+}
+
+.filter-chip-count {
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  opacity: 0.75;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.filter-chip.active .filter-chip-count {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- ARCHIVE TOOLBAR & SEARCH ---------- */
+
+.archive-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 20px 0 8px;
+}
+
+.archive-type-tabs {
+  display: inline-flex;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+}
+
+.archive-type-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.archive-type-btn.active {
+  background: var(--ink);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(28, 25, 23, 0.12);
+}
+
+.archive-search-box {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: #FFFFFF;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 0 14px;
+  min-width: 240px;
+  flex: 1;
+  max-width: 360px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.archive-search-box:focus-within {
+  border-color: var(--ink);
+  box-shadow: 0 2px 12px rgba(28, 25, 23, 0.06);
+}
+
+.archive-search-icon {
+  color: var(--muted);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.archive-search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--ink);
+  width: 100%;
+}
+
+.archive-search-clear {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.archive-results-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+}
+
+.archive-reset-filters {
+  background: transparent;
+  border: none;
+  color: #DC2626;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.archive-reset-filters:hover {
+  text-decoration: underline;
+}
+
+.archive-cat-song {
+  color: #7C3AED !important;
+  background: #F5F3FF !important;
+}
+
+.archive-sub-title {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.archive-genres-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.archive-genre-pill {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.archive-year-pill,
+.archive-network-pill {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #FDFBF7;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+}
+
+.archive-play-btn-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #DC2626;
+  margin-left: auto;
+  transition: transform 0.15s ease;
+}
+
+.archive-card:hover .archive-play-btn-tag {
+  transform: translateX(3px);
+}
+
+.archive-empty-filter {
+  text-align: center;
+  padding: 48px 24px;
+  background: #FFFFFF;
+  border: 1.5px dashed var(--line);
+  border-radius: 16px;
+  margin: 32px 0;
+}
+
+.archive-empty-filter p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.filter-reset-action {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: #FFFFFF;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-reset-action:hover {
+  border-color: var(--ink);
+  background: var(--paper-soft);
 }
 
 .archive-grid {
