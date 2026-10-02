@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
+function clampScore(score: unknown) {
+  const n = Math.round(Number(score));
+  return Number.isFinite(n) ? Math.min(25, Math.max(0, n)) : 0;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -34,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (completed) {
       insertData.completed_at = new Date().toISOString();
       if (solved !== undefined) insertData.solved = Boolean(solved);
-      if (score !== undefined) insertData.score = score;
+      if (score !== undefined) insertData.score = clampScore(score);
       if (attempts !== undefined) insertData.attempts = attempts;
       if (stepsRevealed !== undefined) insertData.steps_revealed = stepsRevealed;
       if (timeSeconds !== undefined) insertData.time_seconds = timeSeconds;
@@ -71,7 +76,7 @@ export async function PATCH(req: NextRequest) {
     if (stepsRevealed !== undefined) updates.steps_revealed = stepsRevealed;
     if (timeSeconds !== undefined) updates.time_seconds = timeSeconds;
     if (solved !== undefined) updates.solved = Boolean(solved);
-    if (score !== undefined) updates.score = score;
+    if (score !== undefined) updates.score = clampScore(score);
     if (attempts !== undefined) updates.attempts = attempts;
     if (completed) updates.completed_at = new Date().toISOString();
 

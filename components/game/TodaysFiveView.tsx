@@ -9,6 +9,8 @@ import { PeopleGameView } from "./PeopleGameView";
 import { EditorialShareCard } from "@/components/sharing/EditorialShareCard";
 import { calculateTodaysDeokryeok } from "@/lib/game/scoring";
 import { getStreak, recordDailyPlay } from "@/lib/game/streak";
+import { getDeviceId } from "@/lib/game/device";
+import { LeaderboardPrompt } from "@/components/leaderboard/LeaderboardPrompt";
 import type { Drama, TodaysFiveGame } from "@/types/game";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { puzzleTypeLabel } from "@/lib/i18n/dictionary";
@@ -28,8 +30,27 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
   const totalGames = todaysFive.items.length;
   const currentItem = todaysFive.items[currentIndex];
 
+  function recordPlay(solved: boolean, attemptsUsed: number, score: number) {
+    const dailySetItemId = currentItem?.dailySetItemId;
+    const guestId = getDeviceId();
+    if (!dailySetItemId || !guestId) return;
+    fetch("/api/game/play", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dailySetItemId,
+        guestId,
+        completed: true,
+        solved,
+        attempts: attemptsUsed,
+        score,
+      }),
+    }).catch(() => {});
+  }
+
   function handleGameComplete(type: string, attemptsUsed: number) {
     const gameScore = Math.max(0, (6 - attemptsUsed) * 5);
+    recordPlay(true, attemptsUsed, gameScore);
     const nextScores = [...scores, { type, score: gameScore }];
     setScores(nextScores);
 
@@ -41,6 +62,7 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
   }
 
   function handleGameFail(type: string) {
+    recordPlay(false, 0, 0);
     const nextScores = [...scores, { type, score: 0 }];
     setScores(nextScores);
 
@@ -85,6 +107,8 @@ export function TodaysFiveView({ todaysFive, dramas }: Props) {
           gameDate={todaysFive.gameDate}
           deokryeokResult={finalResult}
         />
+
+        <LeaderboardPrompt />
       </div>
     );
   }

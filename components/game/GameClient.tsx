@@ -10,6 +10,7 @@ import {
   saveDailyGameState,
 } from "@/lib/game/streak";
 import { getDeviceId } from "@/lib/game/device";
+import { LeaderboardPrompt } from "@/components/leaderboard/LeaderboardPrompt";
 import {
   buildChallengeShare,
   buildInviteShare,
@@ -688,6 +689,8 @@ export function GameClient({ game, dramas, todayDate }: Props) {
                 </span>
               )}
             </div>
+
+            <LeaderboardPrompt />
 
             <div className="result-drama-titles">
               <h3 className="result-primary-title">{primaryTitle(answer)}</h3>

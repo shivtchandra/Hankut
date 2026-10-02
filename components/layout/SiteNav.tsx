@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import { IconCalendar, IconScene, IconSearch } from "@/components/icons/Icons";
+import { IconCalendar, IconScene, IconSearch, IconTrophy } from "@/components/icons/Icons";
 
 export function SiteNav() {
   const path = usePathname();
@@ -13,6 +13,7 @@ export function SiteNav() {
     { href: "/", label: locale === "ko" ? "오늘의 게임" : "Today", icon: IconScene },
     { href: "/dramas", label: locale === "ko" ? "드라마 탐색" : "Browse", icon: IconSearch },
     { href: "/archive", label: locale === "ko" ? "지난 장면" : "Archive", icon: IconCalendar },
+    { href: "/leaderboard", label: locale === "ko" ? "순위표" : "Leaderboard", icon: IconTrophy },
   ];
 
   return (

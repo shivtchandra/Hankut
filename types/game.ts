@@ -141,12 +141,13 @@ export type PeoplePayload = {
   clues: Clue[];
 };
 
-export type MiniGameItem =
+export type MiniGameItem = (
   | { type: "scene"; payload: ScenePayload }
   | { type: "song"; payload: SongPayload }
   | { type: "chosung"; payload: ChosungPayload }
   | { type: "connections"; payload: ConnectionsPayload }
-  | { type: "people"; payload: PeoplePayload };
+  | { type: "people"; payload: PeoplePayload }
+) & { dailySetItemId?: string };
 
 export type TodaysFiveGame = {
   id: string;

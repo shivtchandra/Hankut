@@ -449,7 +449,7 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
         (cluesByPuzzle[puzzle.id] ?? []) as never[],
         (answersByPuzzle[puzzle.id] ?? []) as never[],
       );
-      if (gameItem) miniItems.push(gameItem);
+      if (gameItem) miniItems.push({ ...gameItem, dailySetItemId: item.id });
     }
 
     if (miniItems.length === 0) return DEMO_TODAYS_FIVE ?? null;
