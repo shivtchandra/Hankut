@@ -1,8 +1,13 @@
 import { MetadataRoute } from "next";
+import { fetchDramasList } from "@/lib/game/today";
 import { DEMO_DRAMAS } from "@/lib/demo-data";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dramacut.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://hankut.shivachandra.work");
 
   // Static routes
   const routes = ["", "/archive", "/dramas", "/leaderboard"].map((route) => ({
@@ -13,7 +18,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Drama detail dynamic routes
-  const dramaRoutes = DEMO_DRAMAS.map((drama) => ({
+  let dramas: Array<{ id: string }> = [];
+  try {
+    const list = await fetchDramasList();
+    dramas = list && list.length > 0 ? list : DEMO_DRAMAS;
+  } catch {
+    dramas = DEMO_DRAMAS;
+  }
+
+  const dramaRoutes = dramas.map((drama) => ({
     url: `${baseUrl}/dramas/${drama.id}`,
     lastModified: new Date().toISOString(),
     changeFrequency: "monthly" as const,

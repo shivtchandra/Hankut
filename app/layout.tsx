@@ -29,7 +29,11 @@ const dmMono = DM_Mono({
   preload: true,
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dramacut.com";
+const baseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://hankut.shivachandra.work");
 
 export const viewport: Viewport = {
   themeColor: "#1C1917",
@@ -39,6 +43,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
+  verification: {
+    google: "JFPWZNVDMgpP1ekXERoqFTrfum4L4CW55JO3MMGgxeI",
+  },
   title: {
     default: "Dramacut — Daily K-Drama Quiz, Scene & OST Game | 드라마컷",
     template: "%s | Dramacut — 드라마컷",
