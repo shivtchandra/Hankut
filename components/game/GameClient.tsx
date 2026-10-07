@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import { matchesAlias, normalize } from "@/lib/game/normalization";
+import { matchesAlias, normalize, rawNormalize } from "@/lib/game/normalization";
 import {
   getDailyGameState,
   getStreak,
@@ -76,33 +76,71 @@ export function GameClient({ game, dramas, todayDate }: Props) {
 
   // Pre-index normalized aliases for zero-lag instant autocomplete
   const indexedDramas = useMemo(() => {
-    return (dramas || []).map((drama) => ({
-      drama,
-      normalizedAliases: (drama.aliases || [drama.titleKr, drama.titleEn]).map(normalize),
-    }));
+    return (dramas || []).map((drama) => {
+      const allAliases = [
+        drama.titleEn,
+        drama.titleKr,
+        ...(drama.aliases || []),
+      ].filter((a): a is string => Boolean(a));
+
+      const normVariants = Array.from(
+        new Set(
+          allAliases.flatMap((a) => [normalize(a), rawNormalize(a)]).filter(Boolean),
+        ),
+      );
+
+      return {
+        drama,
+        rawAliases: allAliases,
+        normVariants,
+        normTitleEn: normalize(drama.titleEn || ""),
+        normTitleKr: normalize(drama.titleKr || ""),
+      };
+    });
   }, [dramas]);
 
   const suggestions = useMemo(() => {
-    if (!guess.trim()) return [];
-    const q = normalize(guess);
-    if (!q) return [];
-
-    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const prefixRe = new RegExp(`^${escaped}`);
-    const wordRe = new RegExp(`(^|\\s)${escaped}`);
+    const clean = guess.trim();
+    if (!clean) return [];
+    const qNorm = normalize(clean);
+    const qRaw = rawNormalize(clean);
+    const queries = Array.from(new Set([qNorm, qRaw].filter(Boolean)));
+    if (queries.length === 0) return [];
 
     const tier1: Drama[] = []; // title starts with query
     const tier2: Drama[] = []; // word within title starts with query
     const tier3: Drama[] = []; // substring anywhere
+    const seen = new Set<string>();
 
     for (const item of indexedDramas) {
-      const aliases = item.normalizedAliases;
-      if (aliases.some((a) => prefixRe.test(a))) {
-        tier1.push(item.drama);
-      } else if (aliases.some((a) => wordRe.test(a))) {
-        tier2.push(item.drama);
-      } else if (aliases.some((a) => a.includes(q))) {
-        tier3.push(item.drama);
+      const { normVariants, rawAliases, drama } = item;
+      let matchedTier = 0;
+
+      for (const q of queries) {
+        if (normVariants.some((v) => v.startsWith(q))) {
+          matchedTier = 1;
+          break;
+        }
+
+        const wordRe = new RegExp(`(^|[\\s_\\-·])${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+        if (rawAliases.some((a) => wordRe.test(normalize(a)) || wordRe.test(a))) {
+          matchedTier = matchedTier === 0 ? 2 : matchedTier;
+        }
+
+        if (matchedTier === 0 && normVariants.some((v) => v.includes(q))) {
+          matchedTier = 3;
+        }
+      }
+
+      if (matchedTier === 1 && !seen.has(drama.id)) {
+        tier1.push(drama);
+        seen.add(drama.id);
+      } else if (matchedTier === 2 && !seen.has(drama.id)) {
+        tier2.push(drama);
+        seen.add(drama.id);
+      } else if (matchedTier === 3 && !seen.has(drama.id)) {
+        tier3.push(drama);
+        seen.add(drama.id);
       }
     }
     return [...tier1, ...tier2, ...tier3].slice(0, 6);

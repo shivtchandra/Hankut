@@ -9,6 +9,7 @@ export function CreateDramaForm() {
   const [titleEn, setTitleEn] = useState("");
   const [year, setYear] = useState("");
   const [network, setNetwork] = useState("");
+  const [status, setStatus] = useState<"published" | "draft">("published");
   const [msg, setMsg] = useState("");
 
   function onSubmit(event: React.FormEvent) {
@@ -22,7 +23,7 @@ export function CreateDramaForm() {
           network: network || null,
           genres: [],
           aliases: [titleKr, titleEn].filter(Boolean),
-          status: "draft",
+          status,
         });
         setTitleKr("");
         setTitleEn("");
@@ -52,6 +53,13 @@ export function CreateDramaForm() {
       <div className="field">
         <label>Network / OTT</label>
         <input value={network} onChange={(e) => setNetwork(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>Status</label>
+        <select value={status} onChange={(e) => setStatus(e.target.value as "published" | "draft")}>
+          <option value="published">Published (searchable in game)</option>
+          <option value="draft">Draft (hidden from players)</option>
+        </select>
       </div>
       <div className="full">
         <button className="primary" type="submit" disabled={pending}>

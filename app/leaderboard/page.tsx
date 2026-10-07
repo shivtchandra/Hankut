@@ -37,7 +37,7 @@ async function fetchRows(period: Period): Promise<Row[]> {
 
 export default function LeaderboardPage() {
   const { locale, t } = useLocale();
-  const [tab, setTab] = useState<Period>("today");
+  const [tab, setTab] = useState<Period>("all");
   const [rows, setRows] = useState<Row[] | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);

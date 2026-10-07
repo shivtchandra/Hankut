@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
-import { normalize } from "@/lib/game/normalization";
+import { generateSmartAliases, normalize } from "@/lib/game/normalization";
 
 const dramaSchema = z.object({
   titleKr: z.string().min(1),
@@ -23,6 +23,12 @@ export async function createDrama(input: z.input<typeof dramaSchema>) {
   const parsed = dramaSchema.parse(input);
   const db = await createSupabaseAdmin();
 
+  const smartAliases = generateSmartAliases(
+    parsed.titleKr,
+    parsed.titleEn,
+    parsed.aliases,
+  );
+
   const { data, error } = await db
     .from("dramas")
     .insert({
@@ -31,9 +37,7 @@ export async function createDrama(input: z.input<typeof dramaSchema>) {
       year: parsed.year,
       network: parsed.network,
       genres: parsed.genres,
-      aliases: parsed.aliases.length
-        ? parsed.aliases
-        : [parsed.titleKr, parsed.titleEn],
+      aliases: smartAliases,
       status: parsed.status,
     })
     .select()
@@ -42,6 +46,7 @@ export async function createDrama(input: z.input<typeof dramaSchema>) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/dramas");
+  revalidatePath("/");
   return data;
 }
 
@@ -61,14 +66,8 @@ export async function quickCreateDrama(
   if (!titleEn) throw new Error("English title is required");
   const db = await createSupabaseAdmin();
 
-  // Every spelling players might type: both titles, Korean without spaces, alt titles.
-  const aliases = [
-    ...new Set(
-      [titleKr, titleEn, titleKr.replace(/\s+/g, ""), ...(input.altTitles ?? [])]
-        .map((t) => t.trim())
-        .filter(Boolean),
-    ),
-  ];
+  // Every spelling players might type: both titles, Korean without spaces, contractions, alt titles.
+  const aliases = generateSmartAliases(titleKr, titleEn, input.altTitles ?? []);
   const wantedKeys = new Set(aliases.map(normalize).filter(Boolean));
 
   // Reuse an existing drama whose title or alias matches, instead of creating a
@@ -104,6 +103,7 @@ export async function quickCreateDrama(
     .single();
   if (error) throw new Error(error.message);
   revalidatePath("/admin/dramas");
+  revalidatePath("/");
   return data;
 }
 

@@ -2,8 +2,7 @@
 
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import { localizeClueLabel } from "@/lib/i18n/dictionary";
-import { normalize } from "@/lib/game/normalization";
+import { matchesAlias, normalize, rawNormalize } from "@/lib/game/normalization";
 import {
   IconCheck,
   IconLock,
@@ -76,32 +75,71 @@ export function SongGameView({ payload, dramas = [], gameDate, onSolve, onFail }
 
   // Pre-index normalized drama list for zero-lag instant autocomplete
   const indexedDramas = useMemo(() => {
-    return (dramas || []).map((drama) => ({
-      drama,
-      normAliases: (drama.aliases || []).map((a) => normalize(a)),
-      normTitleEn: normalize(drama.titleEn || ""),
-      normTitleKr: normalize(drama.titleKr || ""),
-    }));
+    return (dramas || []).map((drama) => {
+      const allAliases = [
+        drama.titleEn,
+        drama.titleKr,
+        ...(drama.aliases || []),
+      ].filter((a): a is string => Boolean(a));
+
+      const normVariants = Array.from(
+        new Set(
+          allAliases.flatMap((a) => [normalize(a), rawNormalize(a)]).filter(Boolean),
+        ),
+      );
+
+      return {
+        drama,
+        rawAliases: allAliases,
+        normVariants,
+        normTitleEn: normalize(drama.titleEn || ""),
+        normTitleKr: normalize(drama.titleKr || ""),
+      };
+    });
   }, [dramas]);
 
   const suggestions = useMemo(() => {
     const clean = guess.trim();
     if (!clean) return [];
-    const q = normalize(clean);
-    const wordRe = new RegExp(`(^|[\\s_\\-·])${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+    const qNorm = normalize(clean);
+    const qRaw = rawNormalize(clean);
+    const queries = Array.from(new Set([qNorm, qRaw].filter(Boolean)));
+    if (queries.length === 0) return [];
 
     const tier1: Drama[] = [];
     const tier2: Drama[] = [];
     const tier3: Drama[] = [];
+    const seen = new Set<string>();
 
     for (const item of indexedDramas) {
-      const { normTitleEn, normTitleKr, normAliases: aliases } = item;
-      if (normTitleEn.startsWith(q) || normTitleKr.startsWith(q) || aliases.some((a) => a.startsWith(q))) {
-        tier1.push(item.drama);
-      } else if (aliases.some((a) => wordRe.test(a))) {
-        tier2.push(item.drama);
-      } else if (aliases.some((a) => a.includes(q)) || normTitleKr.includes(q) || normTitleEn.includes(q)) {
-        tier3.push(item.drama);
+      const { normVariants, rawAliases, drama } = item;
+      let matchedTier = 0;
+
+      for (const q of queries) {
+        if (normVariants.some((v) => v.startsWith(q))) {
+          matchedTier = 1;
+          break;
+        }
+
+        const wordRe = new RegExp(`(^|[\\s_\\-·])${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+        if (rawAliases.some((a) => wordRe.test(normalize(a)) || wordRe.test(a))) {
+          matchedTier = matchedTier === 0 ? 2 : matchedTier;
+        }
+
+        if (matchedTier === 0 && normVariants.some((v) => v.includes(q))) {
+          matchedTier = 3;
+        }
+      }
+
+      if (matchedTier === 1 && !seen.has(drama.id)) {
+        tier1.push(drama);
+        seen.add(drama.id);
+      } else if (matchedTier === 2 && !seen.has(drama.id)) {
+        tier2.push(drama);
+        seen.add(drama.id);
+      } else if (matchedTier === 3 && !seen.has(drama.id)) {
+        tier3.push(drama);
+        seen.add(drama.id);
       }
     }
     return [...tier1, ...tier2, ...tier3].slice(0, 6);
@@ -138,13 +176,11 @@ export function SongGameView({ payload, dramas = [], gameDate, onSolve, onFail }
   }
 
   function isCorrectDrama(value: string) {
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "").replace(/[^\w가-힣]/g, "");
-    const v = norm(value);
     const targets = [
       payload.dramaTitle,
       ...(payload.aliases || []),
     ].filter(Boolean) as string[];
-    return targets.some((t) => norm(t) === v || norm(t).includes(v) || v.includes(norm(t)));
+    return matchesAlias(value, targets);
   }
 
   function submitGuess(value = guess) {
