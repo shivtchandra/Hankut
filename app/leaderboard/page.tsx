@@ -119,11 +119,11 @@ export default function LeaderboardPage() {
             <table className="lb-table">
               <thead>
                 <tr>
-                  <th>{t("colRank")}</th>
-                  <th>{t("colPlayer")}</th>
-                  <th>{t("colScore")}</th>
-                  <th>{t("colStreak")}</th>
-                  <th>{t("colSpecialty")}</th>
+                  <th className="th-rank">{t("colRank")}</th>
+                  <th className="th-player">{t("colPlayer")}</th>
+                  <th className="th-streak">{t("colStreak")}</th>
+                  <th className="th-cat">{t("colSpecialty")}</th>
+                  <th className="th-score">{t("colScore")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,11 +149,28 @@ export default function LeaderboardPage() {
                         )}
                       </td>
                       <td className="lb-name">
-                        <strong>{item.display_name}</strong>
-                        {item.is_me && <span className="lb-you-tag">{t("lbYou")}</span>}
-                      </td>
-                      <td className="lb-score">
-                        <strong>{item.total_score} pts</strong>
+                        <div className="lb-name-row">
+                          <strong>{item.display_name}</strong>
+                          {item.is_me && <span className="lb-you-tag">{t("lbYou")}</span>}
+                        </div>
+                        <div className="lb-mobile-meta">
+                          <span className="lb-mobile-streak">
+                            <IconFlame
+                              size={12}
+                              style={{
+                                marginRight: 3,
+                                display: "inline-block",
+                                verticalAlign: "middle",
+                              }}
+                            />
+                            {item.current_streak}{" "}
+                            {locale === "en" ? "days" : "일"}
+                          </span>
+                          <span className="lb-mobile-dot">·</span>
+                          <span className="lb-mobile-solved">
+                            {item.solves} / {item.games}
+                          </span>
+                        </div>
                       </td>
                       <td className="lb-streak">
                         <IconFlame
@@ -169,6 +186,9 @@ export default function LeaderboardPage() {
                       </td>
                       <td className="lb-cat">
                         {item.solves} / {item.games}
+                      </td>
+                      <td className="lb-score">
+                        <strong>{item.total_score} pts</strong>
                       </td>
                     </tr>
                   );
