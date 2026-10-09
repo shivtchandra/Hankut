@@ -59,10 +59,10 @@ export default function LeaderboardPage() {
   const closeModal = useCallback(() => setModalOpen(false), []);
 
   const tabs: { key: Period; label: string }[] = [
+    { key: "all", label: t("tabAll") },
     { key: "today", label: t("tabToday") },
     { key: "week", label: t("tabWeek") },
     { key: "month", label: t("tabMonth") },
-    { key: "all", label: t("tabAll") },
   ];
 
   return (
@@ -154,41 +154,44 @@ export default function LeaderboardPage() {
                           {item.is_me && <span className="lb-you-tag">{t("lbYou")}</span>}
                         </div>
                         <div className="lb-mobile-meta">
-                          <span className="lb-mobile-streak">
+                          {item.current_streak > 0 && (
+                            <>
+                              <span className="lb-mobile-streak">
+                                <IconFlame size={12} style={{ marginRight: 3 }} />
+                                {item.current_streak}
+                                {locale === "en" ? "d streak" : "일 연속"}
+                              </span>
+                              <span className="lb-mobile-dot">·</span>
+                            </>
+                          )}
+                          <span className="lb-mobile-solved">
+                            {item.solves}/{item.games} {locale === "en" ? "solved" : "정답"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className={`lb-streak${item.current_streak > 0 ? " hot" : ""}`}>
+                        {item.current_streak > 0 ? (
+                          <>
                             <IconFlame
-                              size={12}
+                              size={14}
                               style={{
-                                marginRight: 3,
+                                marginRight: 4,
                                 display: "inline-block",
                                 verticalAlign: "middle",
                               }}
                             />
-                            {item.current_streak}{" "}
-                            {locale === "en" ? "days" : "일"}
-                          </span>
-                          <span className="lb-mobile-dot">·</span>
-                          <span className="lb-mobile-solved">
-                            {item.solves} / {item.games}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="lb-streak">
-                        <IconFlame
-                          size={14}
-                          style={{
-                            marginRight: 4,
-                            display: "inline-block",
-                            verticalAlign: "middle",
-                          }}
-                        />
-                        {item.current_streak}{" "}
-                        {locale === "en" ? "days" : "일"}
+                            {item.current_streak} {locale === "en" ? "days" : "일"}
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="lb-cat">
                         {item.solves} / {item.games}
                       </td>
                       <td className="lb-score">
-                        <strong>{item.total_score} pts</strong>
+                        <strong>{item.total_score.toLocaleString()}</strong>
+                        <span className="lb-pts">pts</span>
                       </td>
                     </tr>
                   );

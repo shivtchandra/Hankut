@@ -22,7 +22,7 @@ type Props = {
   todayDate: string;
 };
 
-export function GamePage({ game, todaysFive, dramas, dateLabel, todayDate }: Props) {
+export function GamePage({ game, todaysFive, dramas, source, dateLabel, todayDate }: Props) {
   const { locale, t } = useLocale();
   const router = useRouter();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
@@ -194,7 +194,7 @@ export function GamePage({ game, todaysFive, dramas, dateLabel, todayDate }: Pro
 
           {todaysFive && todaysFive.items.length > 0 ? (
             <TodaysFiveView todaysFive={todaysFive} dramas={dramas} />
-          ) : game ? (
+          ) : game && source !== "demo" ? (
             <GameClient game={game} dramas={dramas} todayDate={todayDate} />
           ) : (
             <div style={{ minHeight: "40vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "48px 24px", textAlign: "center" }}>
@@ -202,11 +202,18 @@ export function GamePage({ game, todaysFive, dramas, dateLabel, todayDate }: Pro
                 {displayDate}
               </p>
               <h2 style={{ fontSize: "clamp(1.2rem, 3vw, 1.6rem)", fontWeight: 700, margin: 0 }}>
-                No puzzle for this date
+                {displayDate === todayDate
+                  ? locale === "ko" ? "오늘의 퍼즐이 아직 올라오지 않았어요" : "Today's puzzle isn't up yet"
+                  : locale === "ko" ? "이 날짜의 퍼즐이 없어요" : "No puzzle for this date"}
               </h2>
               <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: 300, margin: 0 }}>
-                Puzzles start from when Dramacut launched.
+                {displayDate === todayDate
+                  ? locale === "ko" ? "곧 업로드될 예정이에요. 그동안 지난 퍼즐을 풀어보세요." : "Check back soon. Meanwhile, catch up on past puzzles."
+                  : locale === "ko" ? "아직 업로드되지 않은 날짜예요." : "Nothing was uploaded for this day."}
               </p>
+              <Link href="/archive" className="lb-identity-btn primary" style={{ marginTop: 8, textDecoration: "none" }}>
+                {locale === "ko" ? "아카이브 보기" : "Browse archive"}
+              </Link>
             </div>
           )}
         </div>

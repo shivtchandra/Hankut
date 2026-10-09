@@ -191,7 +191,6 @@ import type {
   PeoplePayload,
   Clue,
 } from "@/types/game";
-import { DEMO_TODAYS_FIVE } from "@/lib/demo-data";
 
 function mapClues(
   rows: { id: string; type: string; value: string; unlock_after_attempt: number; label?: string }[],
@@ -396,7 +395,7 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
       .eq("daily_set_id", setRow.id)
       .order("position");
 
-    if (!items || items.length === 0) return DEMO_TODAYS_FIVE ?? null;
+    if (!items || items.length === 0) return null;
 
     const puzzleIds = items
       .map((item) => {
@@ -452,7 +451,7 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
       if (gameItem) miniItems.push({ ...gameItem, dailySetItemId: item.id });
     }
 
-    if (miniItems.length === 0) return DEMO_TODAYS_FIVE ?? null;
+    if (miniItems.length === 0) return null;
 
     return {
       id: setRow.id,
@@ -461,6 +460,6 @@ export async function getTodaysFive(targetDate?: string): Promise<TodaysFiveGame
       items: miniItems,
     };
   } catch {
-    return DEMO_TODAYS_FIVE ?? null;
+    return null;
   }
 }
