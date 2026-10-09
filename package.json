@@ -20,7 +20,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.50.0",
     "@vercel/analytics": "^2.0.1",
-    "next": "16.3.3",
+    "next": "16.3.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^3.25.0"
@@ -33,7 +33,7 @@
     "@types/react-dom": "^19.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.0.0",
-    "eslint-config-next": "16.3.3",
+    "eslint-config-next": "16.3.8",
     "remotion": "^4.0.529",
     "tsx": "^4.23.13",
     "typescript": "^5.7.0",
