@@ -851,6 +851,8 @@ a {
 
 .game-stage-container {
   width: min(1040px, 100%);
+  max-width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
 }
 
@@ -861,13 +863,25 @@ a {
   grid-template-columns: minmax(0, 1.28fr) minmax(360px, 1fr);
   gap: 28px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.scene-wrap { position: relative; }
+.scene-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
 
 .scene {
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   aspect-ratio: 16 / 10;
   border-radius: var(--radius-lg);
   background: #1C1917;
@@ -1028,6 +1042,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .console-topbar {
@@ -3404,12 +3422,14 @@ a {
 }
 
 .lb-status {
-  padding: 40px 20px;
+  margin: 0;
+  padding: 48px 24px;
   text-align: center;
   color: var(--muted, #78716C);
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .lb-table tr.lb-me td { background: #FFF7ED; }
@@ -4004,7 +4024,14 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
 /* ---------- RESPONSIVE MOBILE POLISH ---------- */
 
 @media (max-width: 900px) {
-  .game-shell { grid-template-columns: 1fr; gap: 24px; }
+  .game-shell {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    gap: 24px;
+  }
   .connections-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .collection-grid, .dramas-grid { grid-template-columns: 1fr; }
@@ -4036,15 +4063,33 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
   }
   .play-stage, .profile-hero, .archive-content, .leaderboard-content, .directory-content, .drama-detail-hero {
     width: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
     padding-top: 16px;
     padding-bottom: 24px;
   }
+  .game-stage-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
   .drama-detail-body {
     width: calc(100% - 32px);
+    max-width: calc(100% - 32px);
     margin-top: 32px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
   }
   .topbar, .site-header-inner {
     width: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
     padding: 14px 0;
   }
   .brand-en { display: none; }
@@ -4056,9 +4101,14 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
     gap: 10px;
     margin-top: 4px;
     margin-bottom: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   .daily-title-block {
     gap: 6px;
+    width: 100%;
+    max-width: 100%;
   }
   .daily-title-row {
     display: flex;
@@ -4085,19 +4135,37 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
   .date-nav-group {
     justify-content: space-between;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     margin-top: 4px;
     margin-bottom: 12px;
     padding: 7px 14px;
   }
   .game-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
     gap: 12px !important;
   }
   .scene-wrap {
     position: static !important;
     margin-bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .scene {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .frame-nav-controls, .frame-nav {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     margin-top: 10px;
     margin-bottom: 10px;
   }
@@ -4107,6 +4175,30 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
     padding: 18px 16px;
     border-radius: 16px;
     gap: 12px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .console-header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  .unified-play-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .unified-input-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .unified-action-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .search-wrap {
     margin-bottom: 10px;
@@ -4213,15 +4305,32 @@ button.secondary:hover, a.secondary:hover, .admin-title button.secondary:hover {
   }
 }
 
-/* ---------- NARROW PHONE (≤430px) — keep guess panel above fold ---------- */
+/* ---------- NARROW PHONE (≤430px) — keep guess panel above fold & preserve symmetrical margins ---------- */
 @media (max-width: 430px) {
-  .daily-game-header { gap: 6px; margin-bottom: 8px; }
-  .daily-title-block { gap: 2px; }
+  .play-stage {
+    width: calc(100% - 32px) !important;
+    max-width: calc(100% - 32px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+  .topbar, .site-header-inner {
+    width: calc(100% - 32px) !important;
+    max-width: calc(100% - 32px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+  .daily-game-header { gap: 6px; margin-bottom: 8px; width: 100% !important; max-width: 100% !important; }
+  .daily-title-block { gap: 2px; width: 100% !important; max-width: 100% !important; }
   .daily-game-subtitle { display: none; }
-  .daily-title-row { margin-bottom: 0; }
+  .daily-title-row { margin-bottom: 0; width: 100% !important; }
   .daily-game-title { font-size: 20px; }
-  .date-nav-group { margin-top: 0; margin-bottom: 0; padding: 6px 10px; }
+  .date-nav-group { width: 100% !important; max-width: 100% !important; margin-top: 0; margin-bottom: 0; padding: 6px 10px; }
   .date-text { font-size: 11.5px; letter-spacing: 0.02em; }
   .date-tag-today { font-size: 9px; padding: 1px 4px; }
-  .scene { aspect-ratio: 16 / 9; }
+  .game-shell { width: 100% !important; max-width: 100% !important; }
+  .scene-wrap { width: 100% !important; max-width: 100% !important; }
+  .scene { width: 100% !important; max-width: 100% !important; aspect-ratio: 16 / 9; }
+  .guess-panel { width: 100% !important; max-width: 100% !important; }
 }
