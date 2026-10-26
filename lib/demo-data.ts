@@ -226,11 +226,11 @@ export const DEMO_PEOPLE_PAYLOAD: PeoplePayload = {
   nameEn: "Park Bo-gum",
   category: "Actor (배우)",
   frames: [
-    "/demo/frame-1.svg",
-    "/demo/frame-2.svg",
-    "/demo/frame-3.svg",
-    "/demo/frame-4.svg",
-    "/demo/frame-5.svg",
+    "/people/park-bo-gum/frame-1.webp",
+    "/people/park-bo-gum/frame-2.webp",
+    "/people/park-bo-gum/frame-3.webp",
+    "/people/park-bo-gum/frame-4.webp",
+    "/people/park-bo-gum/frame-5.webp",
   ],
   aliases: ["박보검", "Park Bo-gum", "Park Bogum", "bogum"],
   clues: [

@@ -30,11 +30,32 @@ const GOBLIN_CHOSUNG_PAYLOAD: ChosungPayload = {
   ],
 };
 
+const CHA_EUN_WOO_PEOPLE_PAYLOAD = {
+  id: "people-cha-eun-woo",
+  nameKr: "차은우",
+  nameEn: "Cha Eun-woo",
+  category: "Actor & Idol (배우/가수)",
+  frames: [
+    "/people/cha-eun-woo/frame-1.webp",
+    "/people/cha-eun-woo/frame-2.webp",
+    "/people/cha-eun-woo/frame-3.webp",
+    "/people/cha-eun-woo/frame-4.webp",
+    "/people/cha-eun-woo/frame-5.webp",
+  ],
+  aliases: ["차은우", "Cha Eun-woo", "Cha Eunwoo", "Eunwoo", "ASTRO"],
+  clues: [
+    { id: "debut", label: "데뷔년도", value: "ASTRO Member (2016) / Film 'My Brilliant Life'", unlockAfterAttempt: 1 },
+    { id: "dramas", label: "대표작", value: "True Beauty (여신강림), My ID is Gangnam Beauty (강남미인)", unlockAfterAttempt: 2 },
+    { id: "recent", label: "최신작", value: "Wonderful World (원더풀 월드), Island (아일랜드)", unlockAfterAttempt: 3 },
+  ],
+};
+
 type Mode = "connections" | "people" | "chosung";
 
 export default function PreviewPage() {
   const { locale, setLocale } = useLocale();
   const [mode, setMode] = useState<Mode>("connections");
+  const [actorChoice, setActorChoice] = useState<"park-bo-gum" | "cha-eun-woo">("park-bo-gum");
   const [chosungChoice, setChosungChoice] = useState<"tangerines" | "goblin">("tangerines");
   const [key, setKey] = useState(0);
 
@@ -164,6 +185,43 @@ export default function PreviewPage() {
             </button>
           </div>
 
+          {/* Sub-choice for Actor / People */}
+          {mode === "people" && (
+            <div style={{ display: "flex", gap: "10px", marginTop: "12px", alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "12px", color: "#a8a29e" }}>Actor:</span>
+              <button
+                type="button"
+                onClick={() => { setActorChoice("park-bo-gum"); resetGame(); }}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  background: actorChoice === "park-bo-gum" ? "#44403c" : "transparent",
+                  color: "#f5f5f4",
+                  border: "1px solid #57534e",
+                  cursor: "pointer",
+                }}
+              >
+                Park Bo-gum (박보검) - Real Photos
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActorChoice("cha-eun-woo"); resetGame(); }}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  background: actorChoice === "cha-eun-woo" ? "#44403c" : "transparent",
+                  color: "#f5f5f4",
+                  border: "1px solid #57534e",
+                  cursor: "pointer",
+                }}
+              >
+                Cha Eun-woo (차은우) - Real Photos
+              </button>
+            </div>
+          )}
+
           {/* Sub-choice for Chosung */}
           {mode === "chosung" && (
             <div style={{ display: "flex", gap: "10px", marginTop: "12px", alignItems: "center" }}>
@@ -209,7 +267,10 @@ export default function PreviewPage() {
           )}
 
           {mode === "people" && (
-            <PeopleGameView payload={DEMO_PEOPLE_PAYLOAD} dramas={DEMO_DRAMAS} />
+            <PeopleGameView
+              payload={actorChoice === "park-bo-gum" ? DEMO_PEOPLE_PAYLOAD : (CHA_EUN_WOO_PEOPLE_PAYLOAD as any)}
+              dramas={DEMO_DRAMAS}
+            />
           )}
 
           {mode === "chosung" && (
