@@ -121,24 +121,58 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
 
       <div className="connections-grid">
         {/* Render Solved Groups */}
-        {solvedGroups.map((group) => (
-          <div key={group.id} className={`solved-group-card ${group.difficulty}`}>
-            <h3>{group.label}</h3>
-            <p>{group.items.map((i) => i.text).join(", ")}</p>
-          </div>
-        ))}
+        {solvedGroups.map((group) => {
+          const groupTitle = locale === "en" ? (group.labelEn || group.label) : group.label;
+          const groupSub = locale === "en" ? (group.labelEn ? group.label : "") : (group.labelEn || "");
+          return (
+            <div key={group.id} className={`solved-group-card ${group.difficulty}`}>
+              <h3>
+                {groupTitle}
+                {groupSub && (
+                  <span style={{ fontSize: "12px", opacity: 0.8, marginLeft: "8px", fontWeight: 400 }}>
+                    ({groupSub})
+                  </span>
+                )}
+              </h3>
+              <p>
+                {group.items
+                  .map((i) => (locale === "en" ? (i.textEn || i.text) : `${i.text}${i.textEn ? ` (${i.textEn})` : ""}`))
+                  .join(", ")}
+              </p>
+            </div>
+          );
+        })}
 
         {/* Render Remaining Grid Items */}
         {availableItems.map((item) => {
           const isSelected = selectedIds.includes(item.id);
+          const primaryText = locale === "en" ? (item.textEn || item.text) : item.text;
+          const secondaryText = locale === "en" ? (item.textEn ? item.text : "") : (item.textEn || "");
+
           return (
             <button
               key={item.id}
               type="button"
               className={`conn-card ${isSelected ? "selected" : ""}`}
               onClick={() => toggleSelect(item.id)}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                padding: "10px 8px",
+                gap: "3px",
+              }}
             >
-              {item.text}
+              <span style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1.25 }}>
+                {primaryText}
+              </span>
+              {secondaryText && (
+                <span style={{ fontSize: "11px", fontWeight: 500, opacity: isSelected ? 0.85 : 0.65, lineHeight: 1.2 }}>
+                  {secondaryText}
+                </span>
+              )}
             </button>
           );
         })}

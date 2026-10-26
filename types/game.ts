@@ -82,6 +82,7 @@ export type ScenePayload = {
 export type ConnectionItem = {
   id: string;
   text: string;
+  textEn?: string;
   groupId: string;
   entityId?: string;
 };
@@ -89,7 +90,9 @@ export type ConnectionItem = {
 export type ConnectionGroup = {
   id: string;
   label: string;
+  labelEn?: string;
   description: string;
+  descriptionEn?: string;
   difficulty: "easy" | "medium" | "hard" | "brutal";
   items: ConnectionItem[];
 };

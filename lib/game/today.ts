@@ -298,19 +298,24 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
     const groupsMeta: Array<{
       id: string;
       label: string;
+      labelEn?: string;
       description: string;
+      descriptionEn?: string;
       difficulty: "easy" | "medium" | "hard" | "brutal";
-      items: Array<{ id: string; text: string; entityId?: string }>;
+      items: Array<{ id: string; text: string; textEn?: string; entityId?: string }>;
     }> = puzzle.metadata?.groups ?? [];
 
     const groups: ConnectionGroup[] = groupsMeta.map((g) => ({
       id: g.id,
       label: g.label,
+      labelEn: g.labelEn,
       description: g.description,
+      descriptionEn: g.descriptionEn,
       difficulty: g.difficulty,
       items: g.items.map((item) => ({
         id: item.id,
         text: item.text,
+        textEn: item.textEn,
         groupId: g.id,
         entityId: item.entityId,
       })),
