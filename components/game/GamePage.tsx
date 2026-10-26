@@ -103,8 +103,8 @@ export function GamePage({ game, todaysFive, dramas, source, dateLabel, todayDat
       }
       if (type === "connections") {
         return locale === "ko"
-          ? "연관된 단어 4개씩 그룹을 완성하세요."
-          : "Find groups of four related items.";
+          ? "공통점이 있는 드라마 4개씩 4세트를 완성하세요."
+          : "Group 16 dramas into sets of 4 with a common link.";
       }
     }
     return t("dailyGameSubtitle");

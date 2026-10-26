@@ -81,8 +81,8 @@ export function ConnectionsGameView({ payload, onSolve, onFail }: Props) {
       if (hasThreeMatch) {
         setNotice(
           locale === "ko"
-            ? "아쉽습니다! 1개만 다른 그룹입니다."
-            : "One away! Only 1 item is from a different group."
+            ? "아쉽습니다! 1개 드라마만 다른 그룹입니다."
+            : "One away! Only 1 drama is from a different group."
         );
       } else {
         setNotice(
