@@ -61,8 +61,6 @@ export function GamePage({ game, todaysFive, dramas, source, dateLabel, todayDat
     router.push(url);
   }
 
-  const featuredDramas = useMemo(() => (dramas || []).slice(0, 4), [dramas]);
-
   const pageTitle = useMemo(() => {
     if (todaysFive && todaysFive.items.length > 1) {
       return locale === "ko" ? "오늘의 5컷" : "Today's 5";
@@ -216,37 +214,6 @@ export function GamePage({ game, todaysFive, dramas, source, dateLabel, todayDat
               </Link>
             </div>
           )}
-        </div>
-
-        <div className="discovery-strip-wrapper">
-          <div className="discovery-header">
-            <div>
-              <h2 className="discovery-title">{t("exploreTitle")}</h2>
-              <p className="discovery-subtitle">{t("exploreSub")}</p>
-            </div>
-            <Link href="/dramas" className="discovery-browse-link">
-              {locale === "ko" ? "전체 보기" : "Browse all"} <IconChevronRight size={14} />
-            </Link>
-          </div>
-
-          <div className="discovery-cards-grid">
-            {featuredDramas.map((drama) => {
-              const primary = locale === "ko" ? drama.titleKr : drama.titleEn;
-              const secondary = locale === "ko" ? drama.titleEn : drama.titleKr;
-              return (
-                <Link key={drama.id} href={`/dramas/${drama.id}`} className="discovery-card">
-                  <div className="discovery-card-top">
-                    <span className="discovery-year">{drama.year}</span>
-                    {drama.genres?.[0] && (
-                      <span className="discovery-genre">{drama.genres[0]}</span>
-                    )}
-                  </div>
-                  <strong className="discovery-primary">{primary}</strong>
-                  <span className="discovery-secondary">{secondary}</span>
-                </Link>
-              );
-            })}
-          </div>
         </div>
       </section>
 
