@@ -155,7 +155,7 @@ export function PeopleGameView({ payload, dramas = [], gameDate, onSolve, onFail
   return (
     <div className="game-shell">
       <div className="people-wrap">
-        <div className="scene">
+        <div className="scene people-scene">
           <img
             key={frame}
             className="scene-frame-img"
