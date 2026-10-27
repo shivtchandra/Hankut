@@ -54,7 +54,7 @@ type Mode = "connections" | "people" | "chosung";
 
 export default function PreviewPage() {
   const { locale, setLocale } = useLocale();
-  const [mode, setMode] = useState<Mode>("connections");
+  const [mode, setMode] = useState<Mode>("people");
   const [actorChoice, setActorChoice] = useState<"park-bo-gum" | "cha-eun-woo">("park-bo-gum");
   const [chosungChoice, setChosungChoice] = useState<"tangerines" | "goblin">("tangerines");
   const [key, setKey] = useState(0);

@@ -164,10 +164,6 @@ export function PeopleGameView({ payload, dramas = [], gameDate, onSolve, onFail
             fetchPriority={frame === 0 ? "high" : "auto"}
             loading="eager"
             decoding="async"
-            style={{
-              filter: frame === 0 ? "brightness(0) blur(2px)" : frame === 1 ? "contrast(1.5) blur(1px)" : "none",
-              transition: "filter 0.3s ease",
-            }}
           />
           <div className="scene-grain" aria-hidden />
           <div className="scene-vignette" aria-hidden />
