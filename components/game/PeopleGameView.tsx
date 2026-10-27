@@ -20,6 +20,7 @@ import {
 } from "@/lib/game/share";
 import { seoulToday } from "@/lib/game/dates";
 import type { Drama, PeoplePayload } from "@/types/game";
+import { PEOPLE_CATALOG, findPersonInCatalog } from "@/lib/game/people-catalog";
 
 type Props = {
   payload: PeoplePayload;
@@ -51,22 +52,78 @@ export function PeopleGameView({ payload, dramas = [], gameDate, onSolve, onFail
   const subTitle = locale === "en" ? payload.nameKr : payload.nameEn;
 
   const searchCandidates = useMemo(() => {
-    const list: { primary: string; secondary: string; cleanVal: string }[] = [];
+    const list: {
+      primary: string;
+      secondary: string;
+      cleanVal: string;
+      searchKeys: string[];
+      isPerson: boolean;
+    }[] = [];
     const seen = new Set<string>();
-    const add = (p: string, s: string, v: string) => {
+
+    const add = (
+      p: string,
+      s: string,
+      v: string,
+      searchKeys: string[],
+      isPerson: boolean
+    ) => {
       const key = v.toLowerCase().trim();
       if (!key || seen.has(key)) return;
       seen.add(key);
-      list.push({ primary: p, secondary: s, cleanVal: v });
+      list.push({ primary: p, secondary: s, cleanVal: v, searchKeys, isPerson });
     };
-    if (payload.nameKr) add(payload.nameKr, payload.nameEn || "Person", payload.nameKr);
-    if (payload.nameEn) add(payload.nameEn, payload.nameKr || "Person", payload.nameEn);
-    payload.aliases.forEach((a) => add(a, "Alias", a));
+
+    // 1. Target person (secret answer)
+    const targetPrimary = locale === "en" ? (payload.nameEn || payload.nameKr) : (payload.nameKr || payload.nameEn);
+    const targetSub = locale === "en" ? payload.nameKr : payload.nameEn;
+    const targetLabel = locale === "en" ? "Person" : "인물";
+    add(
+      targetPrimary,
+      targetSub ? `${targetSub} · ${targetLabel}` : targetLabel,
+      targetPrimary,
+      [payload.nameKr, payload.nameEn, ...payload.aliases].filter(Boolean),
+      true
+    );
+
+    // 2. Comprehensive Korean actors & actresses catalog (140+ top stars)
+    PEOPLE_CATALOG.forEach((person) => {
+      const isActress = person.role === "actress";
+      const primary = locale === "en" ? person.nameEn : person.nameKr;
+      const sub = locale === "en" ? person.nameKr : person.nameEn;
+      const roleLabel =
+        locale === "en"
+          ? isActress
+            ? "Actress"
+            : "Actor"
+          : isActress
+          ? "배우 (여)"
+          : "배우 (남)";
+      const works = person.famousWorks?.length ? ` (${person.famousWorks.slice(0, 2).join(", ")})` : "";
+      const secondary = `${sub} · ${roleLabel}${works}`;
+      const searchKeys = [
+        person.nameEn,
+        person.nameKr,
+        ...(person.aliases || []),
+        ...(person.famousWorks || []),
+      ];
+      add(primary, secondary, primary, searchKeys, true);
+    });
+
+    // 3. Dramas (if player searches a drama)
     dramas.forEach((d) => {
       const p = locale === "en" ? d.titleEn : d.titleKr;
       const s = locale === "en" ? d.titleKr : d.titleEn;
-      add(p, s ? `${s} (Drama)` : "Drama", p);
+      const dramaLabel = locale === "en" ? "Drama" : "드라마";
+      add(
+        p,
+        s ? `${s} (${dramaLabel})` : dramaLabel,
+        p,
+        [d.titleEn, d.titleKr].filter(Boolean),
+        false
+      );
     });
+
     return list;
   }, [payload, dramas, locale]);
 
@@ -74,17 +131,73 @@ export function PeopleGameView({ payload, dramas = [], gameDate, onSolve, onFail
     const clean = guess.trim();
     if (!clean) return [];
     const q = normalize(clean);
-    return searchCandidates
-      .filter((item) => normalize(item.cleanVal).includes(q) || normalize(item.secondary).includes(q))
-      .slice(0, 6);
+    if (!q) return [];
+
+    const matched = searchCandidates.filter((item) => {
+      if (normalize(item.cleanVal).includes(q)) return true;
+      if (normalize(item.primary).includes(q)) return true;
+      return item.searchKeys.some((k) => {
+        const kn = normalize(k);
+        if (q.length <= 2) {
+          return kn === q || kn.startsWith(q) || k.toLowerCase().split(/\s+/).some((w) => w.startsWith(clean.toLowerCase()));
+        }
+        return kn.includes(q);
+      });
+    });
+
+    // Sort to prioritize:
+    // 1. Starts with query on primary name / cleanVal
+    // 2. Starts with query on any search key (alias/Korean/English)
+    // 3. Person before drama
+    // 4. Alphabetical / Hangul
+    matched.sort((a, b) => {
+      const aNorm = normalize(a.cleanVal);
+      const bNorm = normalize(b.cleanVal);
+      const aPrimaryStarts = aNorm.startsWith(q);
+      const bPrimaryStarts = bNorm.startsWith(q);
+
+      if (aPrimaryStarts && !bPrimaryStarts) return -1;
+      if (!aPrimaryStarts && bPrimaryStarts) return 1;
+
+      const aAnyStarts = a.searchKeys.some((k) => normalize(k).startsWith(q));
+      const bAnyStarts = b.searchKeys.some((k) => normalize(k).startsWith(q));
+      if (aAnyStarts && !bAnyStarts) return -1;
+      if (!aAnyStarts && bAnyStarts) return 1;
+
+      if (a.isPerson && !b.isPerson) return -1;
+      if (!a.isPerson && b.isPerson) return 1;
+
+      return a.primary.localeCompare(b.primary);
+    });
+
+    return matched.slice(0, 8);
   }, [guess, searchCandidates]);
+
+  function checkAnswer(clean: string): boolean {
+    if (matchesAlias(clean, payload.aliases)) return true;
+    if (payload.nameKr && matchesAlias(clean, [payload.nameKr])) return true;
+    if (payload.nameEn && matchesAlias(clean, [payload.nameEn])) return true;
+
+    // Cross-check catalog aliases
+    const catalogMatch = findPersonInCatalog(clean);
+    if (catalogMatch) {
+      if (payload.nameKr && matchesAlias(catalogMatch.nameKr, [payload.nameKr])) return true;
+      if (payload.nameEn && matchesAlias(catalogMatch.nameEn, [payload.nameEn])) return true;
+      if (matchesAlias(catalogMatch.nameKr, payload.aliases)) return true;
+      if (matchesAlias(catalogMatch.nameEn, payload.aliases)) return true;
+      for (const a of catalogMatch.aliases || []) {
+        if (matchesAlias(a, payload.aliases)) return true;
+      }
+    }
+    return false;
+  }
 
   function submitGuess(value = guess) {
     if (finished) return;
     const clean = value.trim();
     if (!clean) return;
 
-    const isCorrect = matchesAlias(clean, payload.aliases);
+    const isCorrect = checkAnswer(clean);
     const nextAttempts = [...attempts, clean];
     setAttempts(nextAttempts);
     setGuess("");

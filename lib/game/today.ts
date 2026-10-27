@@ -334,20 +334,22 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
   }
 
   if (type === "people") {
-    const frames = steps
+    const framesFromSteps = steps
       .filter((s: { step_type: string }) => ["image", "silhouette", "crop"].includes(s.step_type))
       .sort((a: { step_number: number }, b: { step_number: number }) => a.step_number - b.step_number)
       .map((s: { asset_url: string | null }) => s.asset_url)
       .filter(Boolean) as string[];
 
+    const frames = framesFromSteps.length > 0 ? framesFromSteps : (puzzle.metadata?.frames ?? []);
+
     const payload: PeoplePayload = {
       id: puzzle.id,
-      nameKr: entityMeta.title_kr ?? primaryAnswer?.answer_text ?? "",
-      nameEn: entityMeta.title_en ?? "",
-      category: puzzle.metadata?.category ?? entityMeta.type ?? "person",
+      nameKr: entityMeta.title_kr ?? puzzle.metadata?.name_kr ?? primaryAnswer?.answer_text ?? "",
+      nameEn: entityMeta.title_en ?? puzzle.metadata?.name_en ?? "",
+      category: puzzle.metadata?.category ?? entityMeta.type ?? "Actor",
       frames,
-      aliases: answers.map((a: { answer_text: string }) => a.answer_text),
-      clues: mapClues(clues),
+      aliases: answers.length > 0 ? answers.map((a: { answer_text: string }) => a.answer_text) : (puzzle.metadata?.aliases ?? []),
+      clues: clues.length > 0 ? mapClues(clues) : (puzzle.metadata?.clues ?? []),
     };
     return { type: "people", payload };
   }
