@@ -284,12 +284,12 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
     const payload: ChosungPayload = {
       id: puzzle.id,
       chosung: puzzle.metadata?.chosung ?? puzzle.title,
-      answerKr: primaryAnswer?.answer_text ?? "",
-      answerEn: answers.find((a: { metadata?: { lang?: string } }) => a.metadata?.lang === "en")?.answer_text ?? "",
+      answerKr: primaryAnswer?.answer_text ?? puzzle.metadata?.answer_kr ?? "",
+      answerEn: answers.find((a: { metadata?: { lang?: string } }) => a.metadata?.lang === "en")?.answer_text ?? puzzle.metadata?.answer_en ?? "",
       category: puzzle.metadata?.category ?? "",
       syllableCount: puzzle.metadata?.syllable_count ?? 0,
-      aliases: answers.map((a: { answer_text: string }) => a.answer_text),
-      clues: mapClues(clues),
+      aliases: answers.length > 0 ? answers.map((a: { answer_text: string }) => a.answer_text) : (puzzle.metadata?.aliases ?? []),
+      clues: clues.length > 0 ? mapClues(clues) : (puzzle.metadata?.clues ?? []),
     };
     return { type: "chosung", payload };
   }
