@@ -6,3 +6,12 @@ out
 .DS_Store
 *.log
 *.tsbuildinfo
+.open-next
+.wrangler
+.mini
+*.mp4
+*.zip
+extracted_frames
+real_db_frames
+real_ui_crop.png
+

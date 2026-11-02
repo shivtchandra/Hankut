@@ -211,25 +211,30 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
   const entityMeta = primaryAnswer?.entity ?? puzzle.entity ?? {};
 
   if (type === "scene" || type === "movie") {
-    const frames = steps
+    const framesFromSteps = steps
       .filter((s: { step_type: string }) => s.step_type === "image")
       .sort((a: { step_number: number }, b: { step_number: number }) => a.step_number - b.step_number)
       .map((s: { asset_url: string | null }) => s.asset_url)
       .filter(Boolean) as string[];
 
+    const frames = framesFromSteps.length > 0 ? framesFromSteps : (puzzle.metadata?.frames ?? []);
+    const mappedClues = clues.length > 0 ? mapClues(clues) : (puzzle.metadata?.clues ?? []);
+
     const payload: ScenePayload = {
       id: puzzle.id,
       episode: puzzle.metadata?.episode ?? 1,
       frames,
-      clues: mapClues(clues),
+      clues: mappedClues,
       drama: {
         id: entityMeta.id ?? puzzle.entity_id ?? "",
-        titleKr: entityMeta.title_kr ?? primaryAnswer?.answer_text ?? puzzle.title,
-        titleEn: entityMeta.title_en ?? "",
-        aliases: entityMeta.aliases ?? answers.map((a: { answer_text: string }) => a.answer_text),
-        year: entityMeta.metadata?.year ?? null,
-        network: entityMeta.metadata?.network ?? null,
-        genres: entityMeta.metadata?.genres ?? [],
+        titleKr: entityMeta.title_kr ?? primaryAnswer?.answer_text ?? puzzle.metadata?.title_kr ?? puzzle.title,
+        titleEn: entityMeta.title_en ?? puzzle.metadata?.title_en ?? "",
+        aliases: answers.length > 0
+          ? answers.map((a: { answer_text: string }) => a.answer_text)
+          : (puzzle.metadata?.aliases ?? [puzzle.title]),
+        year: entityMeta.metadata?.year ?? puzzle.metadata?.year ?? null,
+        network: entityMeta.metadata?.network ?? puzzle.metadata?.network ?? null,
+        genres: entityMeta.metadata?.genres ?? puzzle.metadata?.genres ?? [],
       },
     };
     return { type: "scene", payload };
@@ -248,7 +253,7 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
     );
 
     const rawAliases = answers.map((a: { answer_text: string }) => a.answer_text);
-    const titleKr = entityMeta.title_kr ?? puzzle.title;
+    const titleKr = entityMeta.title_kr ?? puzzle.metadata?.title_kr ?? puzzle.title;
     const titleEn = entityMeta.title_en ?? puzzle.metadata?.title_en ?? "";
     const artistKr = puzzle.metadata?.artist_kr ?? "";
     const artistEn = puzzle.metadata?.artist_en ?? "";
@@ -256,7 +261,7 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
 
     const allAliases = Array.from(
       new Set(
-        [titleKr, titleEn, artistKr, artistEn, dramaTitle, ...rawAliases].filter(Boolean) as string[],
+        [titleKr, titleEn, artistKr, artistEn, dramaTitle, ...rawAliases, ...(puzzle.metadata?.aliases ?? [])].filter(Boolean) as string[],
       ),
     );
 
@@ -266,16 +271,16 @@ function buildMiniGameItem(puzzle: any, steps: any[], clues: any[], answers: any
       titleEn,
       artistKr,
       artistEn,
-      audioUrl: audioStep?.asset_url ?? "",
+      audioUrl: audioStep?.asset_url ?? puzzle.metadata?.audio_url ?? "",
       spotifyTrackId: puzzle.metadata?.spotify_track_id ?? undefined,
-      segments: audioSegments.length > 0 ? audioSegments : [1, 2, 4, 7, 12],
+      segments: audioSegments.length > 0 ? audioSegments : (puzzle.metadata?.segments ?? [1, 2, 4, 7, 12]),
       startSeconds: Number(puzzle.metadata?.start_seconds ?? 0),
       clipStarts:
         clipStarts.length > 0 && clipStarts.every(Number.isFinite) ? clipStarts : undefined,
       dramaTitle,
       sourceUrl: puzzle.metadata?.source_url,
       aliases: allAliases,
-      clues: mapClues(clues),
+      clues: clues.length > 0 ? mapClues(clues) : (puzzle.metadata?.clues ?? []),
     };
     return { type: "song", payload };
   }

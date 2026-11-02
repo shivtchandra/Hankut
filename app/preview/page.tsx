@@ -3,129 +3,43 @@
 import { useState } from "react";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SceneGameView } from "@/components/game/SceneGameView";
 import { ConnectionsGameView } from "@/components/game/ConnectionsGameView";
 import { PeopleGameView } from "@/components/game/PeopleGameView";
-import { ChosungGameView } from "@/components/game/ChosungGameView";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
-  DEMO_CONNECTIONS_PAYLOAD,
-  DEMO_PEOPLE_PAYLOAD,
-  DEMO_CHOSUNG_PAYLOAD,
   DEMO_DRAMAS,
 } from "@/lib/demo-data";
-import type { ChosungPayload, ConnectionsPayload, PeoplePayload } from "@/types/game";
+import type { ConnectionsPayload, ScenePayload, PeoplePayload } from "@/types/game";
 
-const QUEEN_OF_TEARS_CHOSUNG_PAYLOAD: ChosungPayload = {
-  id: "chosung-queen-of-tears",
-  chosung: "ㄴ ㅁ ㅇ   ㅇ ㅇ",
-  answerKr: "눈물의 여왕",
-  answerEn: "Queen of Tears",
-  category: "tvN Romance · 2024 Legend Hit",
-  syllableCount: 4,
-  aliases: ["눈물의 여왕", "눈물의여왕", "Queen of Tears", "Queen of Tear", "눈물"],
+// ─── CANDIDATE 1: THE GLORY (더 글로리) · CLEAN SCENE CUT ─────────────────
+const THE_GLORY_SCENE_PAYLOAD: ScenePayload = {
+  id: "scene-the-glory-gym-bravo",
+  episode: 3,
+  frames: [
+    "/scenes/the-glory/frame-1.webp",
+    "/scenes/the-glory/frame-2.webp",
+    "/scenes/the-glory/frame-3.webp",
+    "/scenes/the-glory/frame-4.webp",
+    "/scenes/the-glory/frame-5.webp",
+  ],
   clues: [
-    { id: "syllables", label: "음절 수", value: "4 Syllables (4글자) · Record-breaking 24.9% tvN viewership", unlockAfterAttempt: 1 },
-    { id: "plot", label: "줄거리/배경", value: "Queens Group chaebol heiress & supermarket prince marriage crisis (퀸즈그룹 홍해인 & 백현우)", unlockAfterAttempt: 2 },
-    { id: "cast", label: "출연진", value: "Kim Soo-hyun × Kim Ji-won (김수현 × 김지원)", unlockAfterAttempt: 3 },
+    { id: "broadcast", label: "방영 정보", value: "2022-2023 Netflix Global Top 10 Sensation · Written by Kim Eun-sook (김은숙)", unlockAfterAttempt: 1 },
+    { id: "cast", label: "주연 배우", value: "Song Hye-kyo × Lim Ji-yeon (Moon Dong-eun & Park Yeon-jin / 송혜교 × 임지연)", unlockAfterAttempt: 2 },
+    { id: "quote", label: "명대사 힌트", value: "“브라보! 멋지다, 박연진!” (High school gym alumni award ceremony confrontation)", unlockAfterAttempt: 3 },
   ],
+  drama: {
+    id: "the-glory",
+    titleKr: "더 글로리",
+    titleEn: "The Glory",
+    aliases: ["더 글로리", "The Glory", "더글로리", "문동은", "박연진", "송혜교", "연진아"],
+    year: 2022,
+    network: "Netflix",
+    genres: ["Thriller", "Revenge", "Drama"],
+  },
 };
 
-const GOBLIN_CHOSUNG_PAYLOAD: ChosungPayload = {
-  id: "chosung-goblin",
-  chosung: "ㄷ ㄲ ㅂ",
-  answerKr: "도깨비",
-  answerEn: "Goblin",
-  category: "tvN Fantasy Romance",
-  syllableCount: 3,
-  aliases: ["도깨비", "Goblin", "Guardian: The Lonely and Great God", "Guardian", "Dokkaebi"],
-  clues: [
-    { id: "broadcast", label: "방영", value: "3 Syllables (3글자) · 2016 tvN Legend Hit", unlockAfterAttempt: 1 },
-    { id: "writer", label: "제작진", value: "Writer Kim Eun-sook (김은숙 작가) × Dir. Lee Eung-bok", unlockAfterAttempt: 2 },
-    { id: "cast", label: "출연진", value: "Gong Yoo, Kim Go-eun, Lee Dong-wook (공유 × 김고은 × 이동욱)", unlockAfterAttempt: 3 },
-  ],
-};
-
-const CONNECTIONS_EDITION_2_PAYLOAD: ConnectionsPayload = {
-  id: "connections-edition-2",
-  title: "오늘의 연결고리 #2 (Edition 2)",
-  groups: [
-    {
-      id: "g1",
-      label: "시간여행 & 타임슬립 드라마",
-      labelEn: "Time Travel & Time Slip",
-      description: "과거와 현재를 오가는 운명적 서사의 타임루프 명작들",
-      descriptionEn: "Dramas centered on time travel, time slips, or second chances in the past",
-      difficulty: "easy",
-      items: [
-        { id: "c1", text: "선재 업고 튀어", textEn: "Lovely Runner", groupId: "g1" },
-        { id: "c2", text: "시그널", textEn: "Signal", groupId: "g1" },
-        { id: "c3", text: "내 남편과 결혼해줘", textEn: "Marry My Husband", groupId: "g1" },
-        { id: "c4", text: "너의 시간 속으로", textEn: "A Time Called You", groupId: "g1" },
-      ],
-    },
-    {
-      id: "g2",
-      label: "법정 & 고난도 변호사 드라마",
-      labelEn: "Courtroom & High-Stakes Legal",
-      description: "법정에서 치열한 정의를 다투는 변호사/판사 이야기",
-      descriptionEn: "Thrilling courtroom battles led by lawyers and judges",
-      difficulty: "medium",
-      items: [
-        { id: "c5", text: "이상한 변호사 우영우", textEn: "Extraordinary Attorney Woo", groupId: "g2" },
-        { id: "c6", text: "빈센조", textEn: "Vincenzo", groupId: "g2" },
-        { id: "c7", text: "소년심판", textEn: "Juvenile Justice", groupId: "g2" },
-        { id: "c8", text: "천원짜리 변호사", textEn: "One Dollar Lawyer", groupId: "g2" },
-      ],
-    },
-    {
-      id: "g3",
-      label: "김지원 주연 대표작",
-      labelEn: "Starring Kim Ji-won",
-      description: "배우 김지원이 뛰어난 연기력으로 히트시킨 대표작",
-      descriptionEn: "Iconic hit dramas led by actress Kim Ji-won",
-      difficulty: "hard",
-      items: [
-        { id: "c9", text: "눈물의 여왕", textEn: "Queen of Tears", groupId: "g3" },
-        { id: "c10", text: "나의 해방일지", textEn: "My Liberation Notes", groupId: "g3" },
-        { id: "c11", text: "쌈, 마이웨이", textEn: "Fight for My Way", groupId: "g3" },
-        { id: "c12", text: "태양의 후예", textEn: "Descendants of the Sun", groupId: "g3" },
-      ],
-    },
-    {
-      id: "g4",
-      label: "K-좀비 & 치명적 크리처 스릴러",
-      labelEn: "Zombie & Creature Outbreak",
-      description: "치명적인 바이러스와 감염자에 맞서는 생존 스릴러",
-      descriptionEn: "High-octane survival series fighting infected monsters and zombies",
-      difficulty: "brutal",
-      items: [
-        { id: "c13", text: "킹덤", textEn: "Kingdom", groupId: "g4" },
-        { id: "c14", text: "지금 우리 학교는", textEn: "All of Us Are Dead", groupId: "g4" },
-        { id: "c15", text: "스위트홈", textEn: "Sweet Home", groupId: "g4" },
-        { id: "c16", text: "해피니스", textEn: "Happiness", groupId: "g4" },
-      ],
-    },
-  ],
-  shuffledItems: [
-    { id: "c1", text: "선재 업고 튀어", textEn: "Lovely Runner", groupId: "g1" },
-    { id: "c6", text: "빈센조", textEn: "Vincenzo", groupId: "g2" },
-    { id: "c11", text: "쌈, 마이웨이", textEn: "Fight for My Way", groupId: "g3" },
-    { id: "c13", text: "킹덤", textEn: "Kingdom", groupId: "g4" },
-    { id: "c2", text: "시그널", textEn: "Signal", groupId: "g1" },
-    { id: "c9", text: "눈물의 여왕", textEn: "Queen of Tears", groupId: "g3" },
-    { id: "c5", text: "이상한 변호사 우영우", textEn: "Extraordinary Attorney Woo", groupId: "g2" },
-    { id: "c14", text: "지금 우리 학교는", textEn: "All of Us Are Dead", groupId: "g4" },
-    { id: "c3", text: "내 남편과 결혼해줘", textEn: "Marry My Husband", groupId: "g1" },
-    { id: "c10", text: "나의 해방일지", textEn: "My Liberation Notes", groupId: "g3" },
-    { id: "c7", text: "소년심판", textEn: "Juvenile Justice", groupId: "g2" },
-    { id: "c15", text: "스위트홈", textEn: "Sweet Home", groupId: "g4" },
-    { id: "c4", text: "너의 시간 속으로", textEn: "A Time Called You", groupId: "g1" },
-    { id: "c12", text: "태양의 후예", textEn: "Descendants of the Sun", groupId: "g3" },
-    { id: "c8", text: "천원짜리 변호사", textEn: "One Dollar Lawyer", groupId: "g2" },
-    { id: "c16", text: "해피니스", textEn: "Happiness", groupId: "g4" },
-  ],
-};
-
+// ─── CANDIDATE 2: KIM JI-WON (김지원) · WHO IS THIS ACTRESS? ────────────────
 const KIM_JI_WON_PEOPLE_PAYLOAD: PeoplePayload = {
   id: "people-kim-ji-won",
   nameKr: "김지원",
@@ -172,34 +86,175 @@ const KIM_JI_WON_PEOPLE_PAYLOAD: PeoplePayload = {
   ],
 };
 
-const CHA_EUN_WOO_PEOPLE_PAYLOAD = {
-  id: "people-cha-eun-woo",
-  nameKr: "차은우",
-  nameEn: "Cha Eun-woo",
-  category: "Actor & Idol (배우/가수)",
-  frames: [
-    "/people/cha-eun-woo/frame-1.webp",
-    "/people/cha-eun-woo/frame-2.webp",
-    "/people/cha-eun-woo/frame-3.webp",
-    "/people/cha-eun-woo/frame-4.webp",
-    "/people/cha-eun-woo/frame-5.webp",
+// ─── CANDIDATE 3: DAILY CONNECTIONS #3 (EDITION 3) · TODAY ─────────────────
+const CONNECTIONS_EDITION_3_PAYLOAD: ConnectionsPayload = {
+  id: "connections-edition-3",
+  title: "오늘의 연결고리 #3 (Edition 3)",
+  groups: [
+    {
+      id: "g1",
+      label: "재벌가 & 후계자 로맨스",
+      labelEn: "Romantic Chaebol & Heiress",
+      description: "거대 재벌 후계자와 사랑에 빠지는 클래식 로코 명작들",
+      descriptionEn: "Iconic romantic dramas featuring wealthy heirs and corporate chaebols",
+      difficulty: "easy",
+      items: [
+        { id: "c1", text: "사랑의 불시착", textEn: "Crash Landing on You", groupId: "g1" },
+        { id: "c2", text: "상속자들", textEn: "The Heirs", groupId: "g1" },
+        { id: "c3", text: "사내맞선", textEn: "Business Proposal", groupId: "g1" },
+        { id: "c4", text: "킹더랜드", textEn: "King the Land", groupId: "g1" },
+      ],
+    },
+    {
+      id: "g2",
+      label: "조선 왕실 & 궁중 로맨스 사극",
+      labelEn: "Joseon Royalty & Palace Romance",
+      description: "궁궐의 암투 속에서 피어난 애틋한 왕실 사극 로맨스",
+      descriptionEn: "Emotional palace sageuks centered on kings, queens, and crown princes",
+      difficulty: "medium",
+      items: [
+        { id: "c5", text: "옷소매 붉은 끝동", textEn: "The Red Sleeve", groupId: "g2" },
+        { id: "c6", text: "슈룹", textEn: "Under the Queen's Umbrella", groupId: "g2" },
+        { id: "c7", text: "해를 품은 달", textEn: "Moon Embracing the Sun", groupId: "g2" },
+        { id: "c8", text: "철인왕후", textEn: "Mr. Queen", groupId: "g2" },
+      ],
+    },
+    {
+      id: "g3",
+      label: "다크 히어로 & 사적 복수 대행",
+      labelEn: "Dark Revenge & Vigilante Justice",
+      description: "법이 심판하지 못한 악인들을 직접 처단하는 처절한 복수극",
+      descriptionEn: "High-octane revenge and vigilante thrillers taking justice into their own hands",
+      difficulty: "hard",
+      items: [
+        { id: "c9", text: "더 글로리", textEn: "The Glory", groupId: "g3" },
+        { id: "c10", text: "모범택시", textEn: "Taxi Driver", groupId: "g3" },
+        { id: "c11", text: "마이 네임", textEn: "My Name", groupId: "g3" },
+        { id: "c12", text: "펜트하우스", textEn: "The Penthouse", groupId: "g3" },
+      ],
+    },
+    {
+      id: "g4",
+      label: "위장 잠입 & 비밀 이중 신분",
+      labelEn: "Secret / Dual Identities",
+      description: "진짜 정체를 숨기고 다른 사람으로 살아가야 하는 비밀스러운 운명",
+      descriptionEn: "Characters living dangerous double lives under concealed or altered identities",
+      difficulty: "brutal",
+      items: [
+        { id: "c13", text: "힐러", textEn: "Healer", groupId: "g4" },
+        { id: "c14", text: "킬미, 힐미", textEn: "Kill Me, Heal Me", groupId: "g4" },
+        { id: "c15", text: "악의 꽃", textEn: "Flower of Evil", groupId: "g4" },
+        { id: "c16", text: "뷰티 인사이드", textEn: "The Beauty Inside", groupId: "g4" },
+      ],
+    },
   ],
-  aliases: ["차은우", "Cha Eun-woo", "Cha Eunwoo", "Eunwoo", "ASTRO"],
-  clues: [
-    { id: "debut", label: "데뷔년도", value: "ASTRO Member (2016) / Film 'My Brilliant Life'", unlockAfterAttempt: 1 },
-    { id: "dramas", label: "대표작", value: "True Beauty (여신강림), My ID is Gangnam Beauty (강남미인)", unlockAfterAttempt: 2 },
-    { id: "recent", label: "최신작", value: "Wonderful World (원더풀 월드), Island (아일랜드)", unlockAfterAttempt: 3 },
+  shuffledItems: [
+    { id: "c3", text: "사내맞선", textEn: "Business Proposal", groupId: "g1" },
+    { id: "c7", text: "해를 품은 달", textEn: "Moon Embracing the Sun", groupId: "g2" },
+    { id: "c11", text: "마이 네임", textEn: "My Name", groupId: "g3" },
+    { id: "c1", text: "사랑의 불시착", textEn: "Crash Landing on You", groupId: "g1" },
+    { id: "c15", text: "악의 꽃", textEn: "Flower of Evil", groupId: "g4" },
+    { id: "c6", text: "슈룹", textEn: "Under the Queen's Umbrella", groupId: "g2" },
+    { id: "c10", text: "모범택시", textEn: "Taxi Driver", groupId: "g3" },
+    { id: "c14", text: "킬미, 힐미", textEn: "Kill Me, Heal Me", groupId: "g4" },
+    { id: "c2", text: "상속자들", textEn: "The Heirs", groupId: "g1" },
+    { id: "c8", text: "철인왕후", textEn: "Mr. Queen", groupId: "g2" },
+    { id: "c12", text: "펜트하우스", textEn: "The Penthouse", groupId: "g3" },
+    { id: "c16", text: "뷰티 인사이드", textEn: "The Beauty Inside", groupId: "g4" },
+    { id: "c4", text: "킹더랜드", textEn: "King the Land", groupId: "g1" },
+    { id: "c5", text: "옷소매 붉은 끝동", textEn: "The Red Sleeve", groupId: "g2" },
+    { id: "c9", text: "더 글로리", textEn: "The Glory", groupId: "g3" },
+    { id: "c13", text: "힐러", textEn: "Healer", groupId: "g4" },
   ],
 };
 
-type Mode = "connections" | "people" | "chosung";
+// ─── CANDIDATE 4: DAILY CONNECTIONS #4 (EDITION 4) · TOMORROW ──────────────
+const CONNECTIONS_EDITION_4_PAYLOAD: ConnectionsPayload = {
+  id: "connections-edition-4",
+  title: "오늘의 연결고리 #4 (Edition 4)",
+  groups: [
+    {
+      id: "g1",
+      label: "청춘 & 학원 캠퍼스 로맨스",
+      labelEn: "Youth & Campus Romance",
+      description: "풋풋한 학창 시절과 캠퍼스의 설렘을 담은 청춘 드라마",
+      descriptionEn: "Heartfluttering school and university youth romances",
+      difficulty: "easy",
+      items: [
+        { id: "t1", text: "여신강림", textEn: "True Beauty", groupId: "g1" },
+        { id: "t2", text: "어쩌다 발견한 하루", textEn: "Extraordinary You", groupId: "g1" },
+        { id: "t3", text: "역도요정 김복주", textEn: "Weightlifting Fairy Kim Bok-joo", groupId: "g1" },
+        { id: "t4", text: "치즈인더트랩", textEn: "Cheese in the Trap", groupId: "g1" },
+      ],
+    },
+    {
+      id: "g2",
+      label: "생명을 살리는 메디컬 휴먼 드라마",
+      labelEn: "Medical & Hospital Heroes",
+      description: "병원 응급실과 수술실에서 펼쳐지는 의사들의 치열한 삶과 휴머니즘",
+      descriptionEn: "Gripping medical dramas centered around doctors and life-saving surgeries",
+      difficulty: "medium",
+      items: [
+        { id: "t5", text: "슬기로운 의사생활", textEn: "Hospital Playlist", groupId: "g2" },
+        { id: "t6", text: "낭만닥터 김사부", textEn: "Dr. Romantic", groupId: "g2" },
+        { id: "t7", text: "닥터슬럼프", textEn: "Doctor Slump", groupId: "g2" },
+        { id: "t8", text: "닥터 이방인", textEn: "Doctor Stranger", groupId: "g2" },
+      ],
+    },
+    {
+      id: "g3",
+      label: "신비로운 판타지 존재 & 신화 속 생물",
+      labelEn: "Supernatural Fantasy Creatures",
+      description: "구미호, 멸망, 영혼의 지배자 등 초자연적 존재와의 환상 로맨스",
+      descriptionEn: "Romances involving non-human deities, spirits, and mythological creatures",
+      difficulty: "hard",
+      items: [
+        { id: "t9", text: "호텔 델루나", textEn: "Hotel Del Luna", groupId: "g3" },
+        { id: "t10", text: "간 떨어지는 동거", textEn: "My Roommate is a Gumiho", groupId: "g3" },
+        { id: "t11", text: "어느 날 우리 집 현관으로 멸망이 들어왔다", textEn: "Doom at Your Service", groupId: "g3" },
+        { id: "t12", text: "구미호뎐", textEn: "Tale of the Nine Tailed", groupId: "g3" },
+      ],
+    },
+    {
+      id: "g4",
+      label: "평행세계 & 다중우주 타임라인",
+      labelEn: "Parallel Worlds & Multiverse",
+      description: "두 개의 서로 다른 차원과 평행우주를 넘나드는 미스터리",
+      descriptionEn: "Mind-bending dramas traveling between parallel dimensions and alternate timelines",
+      difficulty: "brutal",
+      items: [
+        { id: "t13", text: "더 킹 : 영원의 군주", textEn: "The King: Eternal Monarch", groupId: "g4" },
+        { id: "t14", text: "W (더블유)", textEn: "W: Two Worlds", groupId: "g4" },
+        { id: "t15", text: "트레인", textEn: "Train", groupId: "g4" },
+        { id: "t16", text: "앨리스", textEn: "Alice", groupId: "g4" },
+      ],
+    },
+  ],
+  shuffledItems: [
+    { id: "t3", text: "역도요정 김복주", textEn: "Weightlifting Fairy Kim Bok-joo", groupId: "g1" },
+    { id: "t6", text: "낭만닥터 김사부", textEn: "Dr. Romantic", groupId: "g2" },
+    { id: "t10", text: "간 떨어지는 동거", textEn: "My Roommate is a Gumiho", groupId: "g3" },
+    { id: "t14", text: "W (더블유)", textEn: "W: Two Worlds", groupId: "g4" },
+    { id: "t1", text: "여신강림", textEn: "True Beauty", groupId: "g1" },
+    { id: "t7", text: "닥터슬럼프", textEn: "Doctor Slump", groupId: "g2" },
+    { id: "t11", text: "어느 날 우리 집 현관으로 멸망이 들어왔다", textEn: "Doom at Your Service", groupId: "g3" },
+    { id: "t15", text: "트레인", textEn: "Train", groupId: "g4" },
+    { id: "t2", text: "어쩌다 발견한 하루", textEn: "Extraordinary You", groupId: "g1" },
+    { id: "t8", text: "닥터 이방인", textEn: "Doctor Stranger", groupId: "g2" },
+    { id: "t12", text: "구미호뎐", textEn: "Tale of the Nine Tailed", groupId: "g3" },
+    { id: "t16", text: "앨리스", textEn: "Alice", groupId: "g4" },
+    { id: "t4", text: "치즈인더트랩", textEn: "Cheese in the Trap", groupId: "g1" },
+    { id: "t5", text: "슬기로운 의사생활", textEn: "Hospital Playlist", groupId: "g2" },
+    { id: "t9", text: "호텔 델루나", textEn: "Hotel Del Luna", groupId: "g3" },
+    { id: "t13", text: "더 킹 : 영원의 군주", textEn: "The King: Eternal Monarch", groupId: "g4" },
+  ],
+};
+
+type Mode = "the-glory" | "kim-ji-won" | "connections-3" | "connections-4";
 
 export default function PreviewPage() {
   const { locale, setLocale } = useLocale();
-  const [mode, setMode] = useState<Mode>("people");
-  const [connectionsChoice, setConnectionsChoice] = useState<"edition-2" | "edition-1">("edition-2");
-  const [actorChoice, setActorChoice] = useState<"kim-ji-won" | "park-bo-gum" | "cha-eun-woo">("kim-ji-won");
-  const [chosungChoice, setChosungChoice] = useState<"queen-of-tears" | "goblin" | "tangerines">("queen-of-tears");
+  const [mode, setMode] = useState<Mode>("the-glory");
   const [key, setKey] = useState(0);
 
   function resetGame() {
@@ -229,7 +284,7 @@ export default function PreviewPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
             <div>
               <span style={{ fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "#f43f5e", fontWeight: 700 }}>
-                LIVE PREVIEW MODE · TEST BEFORE PUSHING
+                CANDIDATE PUZZLES · TEST PREVIEW
               </span>
               <h1 style={{ fontSize: "20px", margin: "4px 0 0 0", color: "#fafaf9" }}>
                 Candidate Puzzles for Today & Tomorrow
@@ -272,238 +327,106 @@ export default function PreviewPage() {
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px" }}>
             <button
               type="button"
-              onClick={() => { setMode("chosung"); resetGame(); }}
+              onClick={() => { setMode("the-glory"); resetGame(); }}
               style={{
-                padding: "12px 8px",
+                padding: "10px 12px",
                 borderRadius: "8px",
-                border: mode === "chosung" ? "2px solid #e11d48" : "1px solid #44403c",
-                background: mode === "chosung" ? "#e11d48" : "#292524",
+                border: mode === "the-glory" ? "2px solid #e11d48" : "1px solid #44403c",
+                background: mode === "the-glory" ? "#e11d48" : "#292524",
                 color: "#ffffff",
                 fontWeight: 700,
-                fontSize: "13px",
+                fontSize: "12px",
                 cursor: "pointer",
                 textAlign: "center",
               }}
             >
-              ⭐ Day 1 Candidate: 초성 (Chosung)
+              🎬 The Glory (Clean Scene Cut)
             </button>
 
             <button
               type="button"
-              onClick={() => { setMode("connections"); resetGame(); }}
+              onClick={() => { setMode("kim-ji-won"); resetGame(); }}
               style={{
-                padding: "12px 8px",
+                padding: "10px 12px",
                 borderRadius: "8px",
-                border: mode === "connections" ? "2px solid #e11d48" : "1px solid #44403c",
-                background: mode === "connections" ? "#e11d48" : "#292524",
+                border: mode === "kim-ji-won" ? "2px solid #e11d48" : "1px solid #44403c",
+                background: mode === "kim-ji-won" ? "#e11d48" : "#292524",
                 color: "#ffffff",
                 fontWeight: 700,
-                fontSize: "13px",
+                fontSize: "12px",
                 cursor: "pointer",
                 textAlign: "center",
               }}
             >
-              ⭐ Day 2 Candidate: K-Connections
+              ✨ Kim Ji-won (Photo Reveal)
             </button>
 
             <button
               type="button"
-              onClick={() => { setMode("people"); resetGame(); }}
+              onClick={() => { setMode("connections-3"); resetGame(); }}
               style={{
-                padding: "12px 8px",
+                padding: "10px 12px",
                 borderRadius: "8px",
-                border: mode === "people" ? "2px solid #e11d48" : "1px solid #44403c",
-                background: mode === "people" ? "#e11d48" : "#292524",
+                border: mode === "connections-3" ? "2px solid #e11d48" : "1px solid #44403c",
+                background: mode === "connections-3" ? "#e11d48" : "#292524",
                 color: "#ffffff",
                 fontWeight: 700,
-                fontSize: "13px",
+                fontSize: "12px",
                 cursor: "pointer",
                 textAlign: "center",
               }}
             >
-              Alternative: Actor / Face Cut
+              🧩 Today: Connections #3
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setMode("connections-4"); resetGame(); }}
+              style={{
+                padding: "10px 12px",
+                borderRadius: "8px",
+                border: mode === "connections-4" ? "2px solid #e11d48" : "1px solid #44403c",
+                background: mode === "connections-4" ? "#e11d48" : "#292524",
+                color: "#ffffff",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+                textAlign: "center",
+              }}
+            >
+              🧩 Tomorrow: Connections #4
             </button>
           </div>
-
-          {/* Sub-choice for Chosung */}
-          {mode === "chosung" && (
-            <div style={{ display: "flex", gap: "10px", marginTop: "12px", alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "12px", color: "#a8a29e", fontWeight: 600 }}>Choose Drama:</span>
-              <button
-                type="button"
-                onClick={() => { setChosungChoice("queen-of-tears"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  background: chosungChoice === "queen-of-tears" ? "#dc2626" : "transparent",
-                  color: "#f5f5f4",
-                  border: chosungChoice === "queen-of-tears" ? "1px solid #ef4444" : "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                🔥 ㄴ ㅁ ㅇ ㅇ ㅇ (눈물의 여왕 / Queen of Tears) - Recommended for Today
-              </button>
-              <button
-                type="button"
-                onClick={() => { setChosungChoice("goblin"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  background: chosungChoice === "goblin" ? "#44403c" : "transparent",
-                  color: "#f5f5f4",
-                  border: "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                ㄷ ㄲ ㅂ (도깨비 / Goblin)
-              </button>
-              <button
-                type="button"
-                onClick={() => { setChosungChoice("tangerines"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  background: chosungChoice === "tangerines" ? "#44403c" : "transparent",
-                  color: "#f5f5f4",
-                  border: "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                ㅍㅆ ㅅㅇㅅㄷ (폭싹 속았수다)
-              </button>
-            </div>
-          )}
-
-          {/* Sub-choice for Connections */}
-          {mode === "connections" && (
-            <div style={{ display: "flex", gap: "10px", marginTop: "12px", alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "12px", color: "#a8a29e", fontWeight: 600 }}>Puzzle Edition:</span>
-              <button
-                type="button"
-                onClick={() => { setConnectionsChoice("edition-2"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  background: connectionsChoice === "edition-2" ? "#dc2626" : "transparent",
-                  color: "#f5f5f4",
-                  border: connectionsChoice === "edition-2" ? "1px solid #ef4444" : "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                ✨ Edition #2: Time Travel / Legal / Kim Ji-won / Zombie (NEW!) - Recommended for Tomorrow
-              </button>
-              <button
-                type="button"
-                onClick={() => { setConnectionsChoice("edition-1"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  background: connectionsChoice === "edition-1" ? "#44403c" : "transparent",
-                  color: "#f5f5f4",
-                  border: "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                Edition #1: Jeju / IU / JTBC / Sci-Fi
-              </button>
-            </div>
-          )}
-
-          {/* Sub-choice for Actor / People */}
-          {mode === "people" && (
-            <div style={{ display: "flex", gap: "10px", marginTop: "12px", alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "12px", color: "#a8a29e", fontWeight: 600 }}>Actor:</span>
-              <button
-                type="button"
-                onClick={() => { setActorChoice("kim-ji-won"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  background: actorChoice === "kim-ji-won" ? "#dc2626" : "transparent",
-                  color: "#f5f5f4",
-                  border: actorChoice === "kim-ji-won" ? "1px solid #ef4444" : "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                🔥 Kim Ji-won (김지원) - Using your photo!
-              </button>
-              <button
-                type="button"
-                onClick={() => { setActorChoice("park-bo-gum"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  background: actorChoice === "park-bo-gum" ? "#44403c" : "transparent",
-                  color: "#f5f5f4",
-                  border: "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                Park Bo-gum (박보검) - Oct 28
-              </button>
-              <button
-                type="button"
-                onClick={() => { setActorChoice("cha-eun-woo"); resetGame(); }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  background: actorChoice === "cha-eun-woo" ? "#44403c" : "transparent",
-                  color: "#f5f5f4",
-                  border: "1px solid #57534e",
-                  cursor: "pointer",
-                }}
-              >
-                Cha Eun-woo (차은우) - Oct 29
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Active Game View */}
         <div key={key}>
-          {mode === "connections" && (
-            <ConnectionsGameView
-              payload={connectionsChoice === "edition-2" ? CONNECTIONS_EDITION_2_PAYLOAD : DEMO_CONNECTIONS_PAYLOAD}
+          {mode === "the-glory" && (
+            <SceneGameView
+              payload={THE_GLORY_SCENE_PAYLOAD}
+              dramas={DEMO_DRAMAS}
             />
           )}
 
-          {mode === "people" && (
+          {mode === "kim-ji-won" && (
             <PeopleGameView
-              payload={
-                actorChoice === "kim-ji-won"
-                  ? KIM_JI_WON_PEOPLE_PAYLOAD
-                  : actorChoice === "park-bo-gum"
-                  ? DEMO_PEOPLE_PAYLOAD
-                  : (CHA_EUN_WOO_PEOPLE_PAYLOAD as any)
-              }
+              payload={KIM_JI_WON_PEOPLE_PAYLOAD}
               dramas={DEMO_DRAMAS}
             />
           )}
 
-          {mode === "chosung" && (
-            <ChosungGameView
-              payload={
-                chosungChoice === "queen-of-tears"
-                  ? QUEEN_OF_TEARS_CHOSUNG_PAYLOAD
-                  : chosungChoice === "goblin"
-                  ? GOBLIN_CHOSUNG_PAYLOAD
-                  : DEMO_CHOSUNG_PAYLOAD
-              }
-              dramas={DEMO_DRAMAS}
+          {mode === "connections-3" && (
+            <ConnectionsGameView
+              payload={CONNECTIONS_EDITION_3_PAYLOAD}
+            />
+          )}
+
+          {mode === "connections-4" && (
+            <ConnectionsGameView
+              payload={CONNECTIONS_EDITION_4_PAYLOAD}
             />
           )}
         </div>
