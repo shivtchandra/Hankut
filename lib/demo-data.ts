@@ -168,6 +168,26 @@ export const DEMO_DRAMAS: Drama[] = [
     network: "SBS",
     genres: ["Romance", "Comedy"],
   },
+  {
+    id: "whats-wrong-with-secretary-kim",
+    titleKr: "김비서가 왜 그럴까",
+    titleEn: "What's Wrong with Secretary Kim",
+    aliases: [
+      "김비서가 왜 그럴까",
+      "What's Wrong with Secretary Kim",
+      "김비서가왜그럴까",
+      "김비서",
+      "이영준",
+      "김미소",
+      "박서준",
+      "박민영",
+      "Secretary Kim",
+      "Whats Wrong with Secretary Kim",
+    ],
+    year: 2018,
+    network: "tvN",
+    genres: ["Romance", "Comedy"],
+  },
 ];
 
 export const DEMO_SCENE_PAYLOAD: ScenePayload = {

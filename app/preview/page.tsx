@@ -12,7 +12,60 @@ import {
 } from "@/lib/demo-data";
 import type { ConnectionsPayload, ScenePayload, PeoplePayload } from "@/types/game";
 
-// ─── CANDIDATE 1: THE GLORY (더 글로리) · CLEAN SCENE CUT ─────────────────
+// ─── CANDIDATE 1: WHAT'S WRONG WITH SECRETARY KIM (2018) · CLEAN SCENE CUT ──
+const SECRETARY_KIM_SCENE_PAYLOAD: ScenePayload = {
+  id: "scene-whats-wrong-with-secretary-kim-tie",
+  episode: 2,
+  frames: [
+    "/scenes/whats-wrong-with-secretary-kim/frame-1.webp",
+    "/scenes/whats-wrong-with-secretary-kim/frame-2.webp",
+    "/scenes/whats-wrong-with-secretary-kim/frame-3.webp",
+    "/scenes/whats-wrong-with-secretary-kim/frame-4.webp",
+    "/scenes/whats-wrong-with-secretary-kim/frame-5.webp",
+  ],
+  clues: [
+    {
+      id: "broadcast",
+      label: "방영 정보",
+      value: "2018 tvN Legend Rom-Com (Peak 8.7% rating) · Based on the hit webtoon by Jung Kyung-yoon",
+      unlockAfterAttempt: 1,
+    },
+    {
+      id: "cast",
+      label: "주연 배우 & 캐릭터",
+      value: "Park Seo-joon × Park Min-young (Lee Young-joon & Kim Mi-so / 박서준 × 박민영)",
+      unlockAfterAttempt: 2,
+    },
+    {
+      id: "quote",
+      label: "명대사 힌트",
+      value: "“김 비서가 왜 그럴까?” — Iconic necktie adjustment scene in the vice chairman's office",
+      unlockAfterAttempt: 3,
+    },
+  ],
+  drama: {
+    id: "whats-wrong-with-secretary-kim",
+    titleKr: "김비서가 왜 그럴까",
+    titleEn: "What's Wrong with Secretary Kim",
+    aliases: [
+      "김비서가 왜 그럴까",
+      "What's Wrong with Secretary Kim",
+      "Whats Wrong with Secretary Kim",
+      "김비서가왜그럴까",
+      "김비서",
+      "이영준",
+      "김미소",
+      "박서준",
+      "박민영",
+      "Secretary Kim",
+    ],
+    year: 2018,
+    network: "tvN",
+    genres: ["Romance", "Comedy"],
+  },
+};
+
+// ─── CANDIDATE 2: THE GLORY (더 글로리) · CLEAN SCENE CUT ─────────────────
 const THE_GLORY_SCENE_PAYLOAD: ScenePayload = {
   id: "scene-the-glory-gym-bravo",
   episode: 3,
@@ -39,7 +92,7 @@ const THE_GLORY_SCENE_PAYLOAD: ScenePayload = {
   },
 };
 
-// ─── CANDIDATE 2: KIM JI-WON (김지원) · WHO IS THIS ACTRESS? ────────────────
+// ─── CANDIDATE 3: KIM JI-WON (김지원) · WHO IS THIS ACTRESS? ────────────────
 const KIM_JI_WON_PEOPLE_PAYLOAD: PeoplePayload = {
   id: "people-kim-ji-won",
   nameKr: "김지원",
@@ -86,89 +139,7 @@ const KIM_JI_WON_PEOPLE_PAYLOAD: PeoplePayload = {
   ],
 };
 
-// ─── CANDIDATE 3: DAILY CONNECTIONS #3 (EDITION 3) · TODAY ─────────────────
-const CONNECTIONS_EDITION_3_PAYLOAD: ConnectionsPayload = {
-  id: "connections-edition-3",
-  title: "오늘의 연결고리 #3 (Edition 3)",
-  groups: [
-    {
-      id: "g1",
-      label: "재벌가 & 후계자 로맨스",
-      labelEn: "Romantic Chaebol & Heiress",
-      description: "거대 재벌 후계자와 사랑에 빠지는 클래식 로코 명작들",
-      descriptionEn: "Iconic romantic dramas featuring wealthy heirs and corporate chaebols",
-      difficulty: "easy",
-      items: [
-        { id: "c1", text: "사랑의 불시착", textEn: "Crash Landing on You", groupId: "g1" },
-        { id: "c2", text: "상속자들", textEn: "The Heirs", groupId: "g1" },
-        { id: "c3", text: "사내맞선", textEn: "Business Proposal", groupId: "g1" },
-        { id: "c4", text: "킹더랜드", textEn: "King the Land", groupId: "g1" },
-      ],
-    },
-    {
-      id: "g2",
-      label: "조선 왕실 & 궁중 로맨스 사극",
-      labelEn: "Joseon Royalty & Palace Romance",
-      description: "궁궐의 암투 속에서 피어난 애틋한 왕실 사극 로맨스",
-      descriptionEn: "Emotional palace sageuks centered on kings, queens, and crown princes",
-      difficulty: "medium",
-      items: [
-        { id: "c5", text: "옷소매 붉은 끝동", textEn: "The Red Sleeve", groupId: "g2" },
-        { id: "c6", text: "슈룹", textEn: "Under the Queen's Umbrella", groupId: "g2" },
-        { id: "c7", text: "해를 품은 달", textEn: "Moon Embracing the Sun", groupId: "g2" },
-        { id: "c8", text: "철인왕후", textEn: "Mr. Queen", groupId: "g2" },
-      ],
-    },
-    {
-      id: "g3",
-      label: "다크 히어로 & 사적 복수 대행",
-      labelEn: "Dark Revenge & Vigilante Justice",
-      description: "법이 심판하지 못한 악인들을 직접 처단하는 처절한 복수극",
-      descriptionEn: "High-octane revenge and vigilante thrillers taking justice into their own hands",
-      difficulty: "hard",
-      items: [
-        { id: "c9", text: "더 글로리", textEn: "The Glory", groupId: "g3" },
-        { id: "c10", text: "모범택시", textEn: "Taxi Driver", groupId: "g3" },
-        { id: "c11", text: "마이 네임", textEn: "My Name", groupId: "g3" },
-        { id: "c12", text: "펜트하우스", textEn: "The Penthouse", groupId: "g3" },
-      ],
-    },
-    {
-      id: "g4",
-      label: "위장 잠입 & 비밀 이중 신분",
-      labelEn: "Secret / Dual Identities",
-      description: "진짜 정체를 숨기고 다른 사람으로 살아가야 하는 비밀스러운 운명",
-      descriptionEn: "Characters living dangerous double lives under concealed or altered identities",
-      difficulty: "brutal",
-      items: [
-        { id: "c13", text: "힐러", textEn: "Healer", groupId: "g4" },
-        { id: "c14", text: "킬미, 힐미", textEn: "Kill Me, Heal Me", groupId: "g4" },
-        { id: "c15", text: "악의 꽃", textEn: "Flower of Evil", groupId: "g4" },
-        { id: "c16", text: "뷰티 인사이드", textEn: "The Beauty Inside", groupId: "g4" },
-      ],
-    },
-  ],
-  shuffledItems: [
-    { id: "c3", text: "사내맞선", textEn: "Business Proposal", groupId: "g1" },
-    { id: "c7", text: "해를 품은 달", textEn: "Moon Embracing the Sun", groupId: "g2" },
-    { id: "c11", text: "마이 네임", textEn: "My Name", groupId: "g3" },
-    { id: "c1", text: "사랑의 불시착", textEn: "Crash Landing on You", groupId: "g1" },
-    { id: "c15", text: "악의 꽃", textEn: "Flower of Evil", groupId: "g4" },
-    { id: "c6", text: "슈룹", textEn: "Under the Queen's Umbrella", groupId: "g2" },
-    { id: "c10", text: "모범택시", textEn: "Taxi Driver", groupId: "g3" },
-    { id: "c14", text: "킬미, 힐미", textEn: "Kill Me, Heal Me", groupId: "g4" },
-    { id: "c2", text: "상속자들", textEn: "The Heirs", groupId: "g1" },
-    { id: "c8", text: "철인왕후", textEn: "Mr. Queen", groupId: "g2" },
-    { id: "c12", text: "펜트하우스", textEn: "The Penthouse", groupId: "g3" },
-    { id: "c16", text: "뷰티 인사이드", textEn: "The Beauty Inside", groupId: "g4" },
-    { id: "c4", text: "킹더랜드", textEn: "King the Land", groupId: "g1" },
-    { id: "c5", text: "옷소매 붉은 끝동", textEn: "The Red Sleeve", groupId: "g2" },
-    { id: "c9", text: "더 글로리", textEn: "The Glory", groupId: "g3" },
-    { id: "c13", text: "힐러", textEn: "Healer", groupId: "g4" },
-  ],
-};
-
-// ─── CANDIDATE 4: DAILY CONNECTIONS #4 (EDITION 4) · TOMORROW ──────────────
+// ─── CANDIDATE 4: DAILY CONNECTIONS #4 ──────────────────────────────────────
 const CONNECTIONS_EDITION_4_PAYLOAD: ConnectionsPayload = {
   id: "connections-edition-4",
   title: "오늘의 연결고리 #4 (Edition 4)",
@@ -250,11 +221,11 @@ const CONNECTIONS_EDITION_4_PAYLOAD: ConnectionsPayload = {
   ],
 };
 
-type Mode = "the-glory" | "kim-ji-won" | "connections-3" | "connections-4";
+type Mode = "secretary-kim" | "the-glory" | "kim-ji-won" | "connections-4";
 
 export default function PreviewPage() {
   const { locale, setLocale } = useLocale();
-  const [mode, setMode] = useState<Mode>("the-glory");
+  const [mode, setMode] = useState<Mode>("secretary-kim");
   const [key, setKey] = useState(0);
 
   function resetGame() {
@@ -284,10 +255,10 @@ export default function PreviewPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
             <div>
               <span style={{ fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "#f43f5e", fontWeight: 700 }}>
-                CANDIDATE PUZZLES · TEST PREVIEW
+                2018 DRAMA CANDIDATE · TEST PREVIEW
               </span>
               <h1 style={{ fontSize: "20px", margin: "4px 0 0 0", color: "#fafaf9" }}>
-                Candidate Puzzles for Today & Tomorrow
+                Candidate Puzzles for Tomorrow
               </h1>
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
@@ -330,6 +301,24 @@ export default function PreviewPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px" }}>
             <button
               type="button"
+              onClick={() => { setMode("secretary-kim"); resetGame(); }}
+              style={{
+                padding: "10px 12px",
+                borderRadius: "8px",
+                border: mode === "secretary-kim" ? "2px solid #e11d48" : "1px solid #44403c",
+                background: mode === "secretary-kim" ? "#e11d48" : "#292524",
+                color: "#ffffff",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+                textAlign: "center",
+              }}
+            >
+              👔 2018: Secretary Kim (김비서가 왜 그럴까)
+            </button>
+
+            <button
+              type="button"
               onClick={() => { setMode("the-glory"); resetGame(); }}
               style={{
                 padding: "10px 12px",
@@ -366,24 +355,6 @@ export default function PreviewPage() {
 
             <button
               type="button"
-              onClick={() => { setMode("connections-3"); resetGame(); }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: "8px",
-                border: mode === "connections-3" ? "2px solid #e11d48" : "1px solid #44403c",
-                background: mode === "connections-3" ? "#e11d48" : "#292524",
-                color: "#ffffff",
-                fontWeight: 700,
-                fontSize: "12px",
-                cursor: "pointer",
-                textAlign: "center",
-              }}
-            >
-              🧩 Today: Connections #3
-            </button>
-
-            <button
-              type="button"
               onClick={() => { setMode("connections-4"); resetGame(); }}
               style={{
                 padding: "10px 12px",
@@ -397,13 +368,20 @@ export default function PreviewPage() {
                 textAlign: "center",
               }}
             >
-              🧩 Tomorrow: Connections #4
+              🧩 Connections #4
             </button>
           </div>
         </div>
 
         {/* Active Game View */}
         <div key={key}>
+          {mode === "secretary-kim" && (
+            <SceneGameView
+              payload={SECRETARY_KIM_SCENE_PAYLOAD}
+              dramas={DEMO_DRAMAS}
+            />
+          )}
+
           {mode === "the-glory" && (
             <SceneGameView
               payload={THE_GLORY_SCENE_PAYLOAD}
@@ -415,12 +393,6 @@ export default function PreviewPage() {
             <PeopleGameView
               payload={KIM_JI_WON_PEOPLE_PAYLOAD}
               dramas={DEMO_DRAMAS}
-            />
-          )}
-
-          {mode === "connections-3" && (
-            <ConnectionsGameView
-              payload={CONNECTIONS_EDITION_3_PAYLOAD}
             />
           )}
 
